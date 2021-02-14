@@ -6,14 +6,15 @@
 #endif
 #include <windows.h>
 #include <iostream>
+#include <sstream>
 #include <string_view>
 
 namespace Holy {
 	constexpr int mines = 99, row = 16, col = 30;
 
-	// Colors of 0 to 8
-	constexpr int colors[] = { 0xC0C0C0, 0xFF0000, 0x008000, 0x0000FF,
-		0x800000, 0x000080, 0x808000, 0x000000, 0x808080 };
+	// Colors of 0 to 7
+	constexpr unsigned int color_number[] = { 0xC0C0C0, 0xFF0000, 0x008000, 0x0000FF,
+		0x800000, 0x000080, 0x808000, 0x000000 };
 	// Color of covered block
 	constexpr int color_blank =  0xC0C0C0;
 	// Name of the minesweeper program
@@ -49,10 +50,17 @@ namespace Holy {
 
 		// Helper function that calculates the point for reading
 		// does not check for out of range errors
-		POINT get_read_point(int x, int y) const noexcept {
+		// d is the number of the set of offset
+		POINT get_read_point(int x, int y, std::size_t d = 0) const {
 			POINT read_point;
-			read_point.x = mWindowArea.left + mGameBoard.x + x_step * x - x_step;
-			read_point.y = mWindowArea.top + mGameBoard.y + y_step * y - y_step;
+			constexpr int dx[] = { 10, 10, 9, 9, 8, 12 };
+			constexpr int dy[] = { 9, 8, 5, 4, 5, 13 };
+			if (d >= sizeof(dx))
+				throw std::out_of_range("Not valid offset number");
+			read_point.x = mWindowArea.left + mGameBoard.x + x_step * x
+				- x_step + dx[d];
+			read_point.y = mWindowArea.top + mGameBoard.y + y_step * y
+				- y_step + dy[d];
 			return read_point;
 		}
 	public:
@@ -100,25 +108,32 @@ namespace Holy {
 		int read_block(int x, int y) const {
 			if (x < 1 || x > 30 || y < 1 || y > 16)
 				throw std::out_of_range("Position not defined!");
-			POINT left_top = get_read_point(x, y);
-			for (double dx = 0; dx <= x_step; dx += 1) {
-				for (double dy = 0; dy <= y_step; dy += 1) {
-					double x = left_top.x + dx;
-					double y = left_top.y + dy;
-					COLORREF color = GetPixel(mDeviceContext, x, y);
-					if (color == CLR_INVALID)
-						continue;
-					std::cout << dx << " " << dy << " " << color << '\n';
+			try {
+				for (int d = 0;; d++) {
+					POINT left_top = get_read_point(x, y, d);
+					COLORREF color =
+						::GetPixel(mDeviceContext, left_top.x, left_top.y);
+					for (int num = 1; num <= 7; num++) {
+						if (color == color_number[num])
+							return num;
+					}
 				}
+			} catch (const std::out_of_range& ex) {
+				// It seems as if all things didn't work, give 0
+				return 0;
 			}
-			return 0;
+			// Should never have reached here
+			std::terminate();
 		}
 	};
 }
 
 int main() {
 	Holy::Butterfly butterfly;
-	std::cout << std::hex;
-	butterfly.read_block(2, 3);
-	// butterfly.read_block(11, 7);
+	for (int iy = 1; iy <= Holy::row; iy++) {
+		for (int ix = 1; ix <= Holy::col; ix++) {
+			std::cout << butterfly.read_block(ix, iy) << ' ';
+		}
+		std::cout << std::endl;
+	}
 }

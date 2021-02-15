@@ -9,6 +9,88 @@
 #include <sstream>
 #include <string_view>
 
+/** @file Final actions that happen during scope cleanup */
+/// @author Deophius
+#include <type_traits>
+#include <utility>
+
+namespace Holy
+{
+    /// @brief A Final action that needs to be done during scope cleanup.
+    ///
+    /// We know that you need to clean up if a exception is thrown.
+    /// Classes like lock_guard, unique_ptr are like that.
+    /// But sometimes you cannot afford a new type for every action, so you can
+    /// take advantage of this FinalAction support class. Like this: <pre> void
+    /// f(int p)
+    /// {
+    ///     int* a = new int(3);
+    ///     auto cleanup = Misc::finally([a]{ delete p; });
+    ///     if (p == 0)
+    ///         throw std::invalid_argument("f you p!");
+    /// }
+    /// </pre>
+    /// This class is not designed to take the place of smart pointers
+    /// and RAII. Just for convenience sometimes.
+    ///
+    /// @attention Requires: NothrowInvocable<Action> && StrippedDown<Action>
+    /// && CopyConstructible<Action>
+    /// @param Action -- the type of the Action. Perhaps it is a lambda
+    /// expression.
+    template <class Action>
+    // Final action class
+    class FinalAction
+    {
+    private:
+        /// @brief This is the action that's executed at the destructor.
+        Action mAction;
+
+    public:
+        /// @brief Constructs a final action bound to act.
+        /// @param act -- the action to perform.
+        /// @exception I_DONT_KNOW Depends on the copy constructor of Action.
+        /// @exception None if std::is_nothrow_copy_constructible_v<Action>
+        /// @note Usually this is not called to construct a FinalAction
+        /// @see Misc::finally<Action>(Action&&)
+        explicit FinalAction(const Action& act) noexcept(
+            std::is_nothrow_copy_constructible_v<Action>) :
+            mAction(act)
+        {
+            // Type requirements.
+            static_assert(
+                std::is_copy_constructible_v<Action>,
+                "Action class should be copy constructible.");
+            static_assert(
+                std::is_invocable_v<Action>,
+                "Action class should be nullary invocable.");
+        }
+
+        /// @brief Nontrivial dtor that invokes action.
+        ///
+        /// @exception None.
+        virtual ~FinalAction() noexcept
+        {
+            mAction();
+        }
+    };
+
+    template <typename Action>
+    /// @fn finally
+    /// @brief Preferred way to create a FinalAction object.
+    ///
+    /// @param Action -- the TYPE of act, (with some twich from C++)
+    /// @param act -- the action to be carried out at scope exit.
+    /// @exceptions see FinalAction::FinalAction.
+    /// @note Action&& is a forwarding reference! Be careful!
+    auto finally(Action&& act)
+        -> FinalAction<std::remove_cv_t<std::remove_reference_t<Action>>>
+    {
+        return FinalAction<std::remove_cv_t<std::remove_reference_t<Action>>>{
+            act
+        };
+    }
+} // namespace Holy
+
 namespace Holy {
 	constexpr int mines = 99, row = 16, col = 30;
 
@@ -33,7 +115,7 @@ namespace Holy {
 		// The handle to the game window
 		HWND mWindow;
 		// The handle to the DC of whole screen , remember to clean up in ~
-		HDC mDeviceContext;
+		HDC mScreenDC;
 
 		// Helper function that calculates the actual point for clicking
 		// Does not check for out of range errors
@@ -75,13 +157,13 @@ namespace Holy {
 			mWindow = hwnd;
 			if (::GetWindowRect(hwnd, &mWindowArea) == 0)
 				throw std::runtime_error("Failed to get window area!");
-			if (!(mDeviceContext = ::GetDC(NULL)))
+			if (!(mScreenDC = ::GetDC(NULL)))
 				throw std::runtime_error("Failed to get device context!");
 		}
 
 		virtual ~Butterfly() noexcept {
 			// Let's assume the release will succeed, or the program crashes
-			::ReleaseDC(mWindow, mDeviceContext);
+			::ReleaseDC(mWindow, mScreenDC);
 		}
 
 		// x, y -- the coordinate of the block from left top
@@ -108,11 +190,29 @@ namespace Holy {
 		int read_block(int x, int y) const {
 			if (x < 1 || x > 30 || y < 1 || y > 16)
 				throw std::out_of_range("Position not defined!");
+			// First try to get a compatible DC
+			HDC memoryDC = ::CreateCompatibleDC(mScreenDC);
+			int width = ::GetDeviceCaps(mScreenDC, HORZRES);
+			int height = ::GetDeviceCaps(mScreenDC, VERTRES);
+			// let's assert these two are positive
+			if (width <= 0 || height <= 0)
+				throw std::runtime_error("Error getting width and height!");
+			// compatible bitmap
+			HBITMAP bitmap = ::CreateCompatibleBitmap(mScreenDC, width, height);
+			// old bitmap
+			auto old_bitmap = static_cast<HBITMAP>(::SelectObject(memoryDC, bitmap));
+			// Copy the screen content into our bitmap
+			::BitBlt(memoryDC, 0, 0, width, height, mScreenDC, 0, 0, SRCCOPY);
+			// Declare a cleanup action
+			auto cleanup = finally([&bitmap, old_bitmap, memoryDC]() {
+				bitmap = static_cast<HBITMAP>(::SelectObject(memoryDC, old_bitmap));
+				::DeleteDC(memoryDC);
+			});
 			try {
 				for (int d = 0;; d++) {
 					POINT left_top = get_read_point(x, y, d);
 					COLORREF color =
-						::GetPixel(mDeviceContext, left_top.x, left_top.y);
+						::GetPixel(memoryDC, left_top.x, left_top.y);
 					for (int num = 1; num <= 7; num++) {
 						if (color == color_number[num])
 							return num;

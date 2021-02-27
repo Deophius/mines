@@ -48,6 +48,8 @@ namespace Holy {
 		bool mRefresh = true;
 		// Width and height of screen DC
 		int mScreenWidth, mScreenHeight;
+		// Number of pairs of suitable deltas to ascertain block content
+		constexpr static int kDeltaPairs = 6;
 
 		// Helper function that gets a screenshot if there is a need to.
 		// Only if there is a need! This function checks mHasClick
@@ -76,8 +78,8 @@ namespace Holy {
 		// d is the number of the set of offset
 		POINT get_read_point(int x, int y, std::size_t d = 0) const {
 			POINT read_point;
-			constexpr std::array<int, 6> dx = { 10, 10, 9, 9, 8, 12 };
-			constexpr std::array<int, 6> dy = { 9, 8, 5, 4, 5, 13 };
+			constexpr std::array<int, kDeltaPairs> dx = { 10, 10, 9, 9, 8, 12 };
+			constexpr std::array<int, kDeltaPairs> dy = { 9, 8, 5, 4, 5, 13 };
 			static_assert(dx.size() == dy.size(), "Array lengths of dx and dy \
 				must match");
 			if (d >= dx.size())
@@ -145,24 +147,16 @@ namespace Holy {
 			if (x < 1 || x > 30 || y < 1 || y > 16)
 				throw std::out_of_range("Position not defined!");
 			refresh_bitmaps();
-			// FIXME: try not use the exception based model later.
-			// maybe a constant instead of a magical number?
-			try {
-				for (int d = 0;; d++) {
-					POINT left_top = get_read_point(x, y, d);
-					COLORREF color =
-						::GetPixel(mMemoryDC, left_top.x, left_top.y);
-					for (int num = 1; num <= 7; num++) {
-						if (color == color_number[num])
-							return num;
-					}
+			for (int d = 0; d < kDeltaPairs; d++) {
+				POINT left_top = get_read_point(x, y, d);
+				COLORREF color =
+					::GetPixel(mMemoryDC, left_top.x, left_top.y);
+				for (int num = 1; num <= 7; num++) {
+					if (color == color_number[num])
+						return num;
 				}
-			} catch (const std::out_of_range& ex) {
-				// It seems as if all things didn't work, give 0
-				return 0;
 			}
-			// Should never have reached here
-			std::terminate();
+			return 0;
 		}
 	};
 }

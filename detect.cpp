@@ -6,6 +6,7 @@
 #endif
 #include <windows.h>
 #include <iostream>
+#include <array>
 #include <sstream>
 #include <string_view>
 
@@ -111,7 +112,7 @@ namespace Holy {
 		// The left up corner of the game board
 		constexpr static POINT mGameBoard{ 15, 100 };
 		// The pixels of each block
-		constexpr static double x_step = 15.9, y_step = 15.9;
+		constexpr static double x_step = 15.96667, y_step = 15.9375;
 		// The handle to the game window
 		HWND mWindow;
 		// The handle to the DC of whole screen , remember to clean up in ~
@@ -152,9 +153,11 @@ namespace Holy {
 		// d is the number of the set of offset
 		POINT get_read_point(int x, int y, std::size_t d = 0) const {
 			POINT read_point;
-			constexpr int dx[] = { 10, 10, 9, 9, 8, 12 };
-			constexpr int dy[] = { 9, 8, 5, 4, 5, 13 };
-			if (d >= sizeof(dx))
+			constexpr std::array dx = { 10, 10, 9, 9, 8, 12 };
+			constexpr std::array dy = { 9, 8, 5, 4, 5, 13 };
+			static_assert(dx.size() == dy.size(), "Array lengths of dx and dy \
+				must match");
+			if (d >= dx.size())
 				throw std::out_of_range("Not valid offset number");
 			read_point.x = mWindowArea.left + mGameBoard.x + x_step * x
 				- x_step + dx[d];

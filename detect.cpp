@@ -116,6 +116,23 @@ namespace Holy {
 		HWND mWindow;
 		// The handle to the DC of whole screen , remember to clean up in ~
 		HDC mScreenDC;
+		// A DC that is stored in memory, to accelerate reading, clean up!
+		HDC mMemoryDC;
+		// Bitmaps that are required for memory DC, clean up!
+		HBITMAP mBitmap, mOldBitmap;
+		// If there is a need to re-screenshot, this is true.
+		bool mRefresh = true;
+		// Width and height of screen DC
+		int mScreenWidth, mScreenHeight;
+
+		// Helper function that gets a screenshot if there is a need to.
+		// Only if there is a need! This function checks mHasClick
+		inline void refresh_bitmaps() {
+			if (mRefresh) {
+				::BitBlt(mMemoryDC, 0, 0, mScreenWidth, mScreenHeight, mScreenDC, 0, 0, SRCCOPY);
+				mRefresh = false;
+			}
+		}
 
 		// Helper function that calculates the actual point for clicking
 		// Does not check for out of range errors
@@ -159,6 +176,16 @@ namespace Holy {
 				throw std::runtime_error("Failed to get window area!");
 			if (!(mScreenDC = ::GetDC(NULL)))
 				throw std::runtime_error("Failed to get device context!");
+			if (!(mMemoryDC = ::CreateCompatibleDC(mScreenDC)))
+				throw std::runtime_error("Failed to construct memory DC!");
+			mScreenWidth = ::GetDeviceCaps(mScreenDC, HORZRES);
+			mScreenHeight = ::GetDeviceCaps(mScreenDC, VERTRES);
+			// let's assert these two are positive
+			if (mScreenWidth <= 0 || mScreenHeight <= 0)
+				throw std::runtime_error("Error getting width and height!");
+			// initialize the bitmaps
+			mBitmap = ::CreateCompatibleBitmap(mScreenDC, mScreenWidth, mScreenHeight);
+			mOldBitmap = static_cast<HBITMAP>(::SelectObject(mMemoryDC, mBitmap));
 		}
 
 		virtual ~Butterfly() noexcept {
@@ -168,13 +195,14 @@ namespace Holy {
 
 		// x, y -- the coordinate of the block from left top
 		// left top is marked as (1, 1), right bottom as (30, 16)
-		void left_click(int x, int y) const {
+		void left_click(int x, int y) {
 			if (x < 1 || x > 30 || y < 1 || y > 16)
 				throw std::out_of_range("Position not defined");
 			POINT actual = get_click_point(x, y);
 			SetCursorPos(actual.x, actual.y);
 			mouse_event(MOUSEEVENTF_LEFTDOWN, actual.x, actual.y, 0, 0);
 			mouse_event(MOUSEEVENTF_LEFTUP, actual.x, actual.y, 0, 0);
+			mRefresh = true;
 		}
 
 		// Gets the focus for minesweeper
@@ -187,32 +215,17 @@ namespace Holy {
 
 		// Read the number at (x, y)
 		// return 0 if the block is unopened or really is 0
-		int read_block(int x, int y) const {
+		int read_block(int x, int y) {
 			if (x < 1 || x > 30 || y < 1 || y > 16)
 				throw std::out_of_range("Position not defined!");
-			// First try to get a compatible DC
-			HDC memoryDC = ::CreateCompatibleDC(mScreenDC);
-			int width = ::GetDeviceCaps(mScreenDC, HORZRES);
-			int height = ::GetDeviceCaps(mScreenDC, VERTRES);
-			// let's assert these two are positive
-			if (width <= 0 || height <= 0)
-				throw std::runtime_error("Error getting width and height!");
-			// compatible bitmap
-			HBITMAP bitmap = ::CreateCompatibleBitmap(mScreenDC, width, height);
-			// old bitmap
-			auto old_bitmap = static_cast<HBITMAP>(::SelectObject(memoryDC, bitmap));
-			// Copy the screen content into our bitmap
-			::BitBlt(memoryDC, 0, 0, width, height, mScreenDC, 0, 0, SRCCOPY);
-			// Declare a cleanup action
-			auto cleanup = finally([&bitmap, old_bitmap, memoryDC]() {
-				bitmap = static_cast<HBITMAP>(::SelectObject(memoryDC, old_bitmap));
-				::DeleteDC(memoryDC);
-			});
+			refresh_bitmaps();
+			// FIXME: try not use the exception based model later.
+			// maybe a constant instead of a magical number?
 			try {
 				for (int d = 0;; d++) {
 					POINT left_top = get_read_point(x, y, d);
 					COLORREF color =
-						::GetPixel(memoryDC, left_top.x, left_top.y);
+						::GetPixel(mMemoryDC, left_top.x, left_top.y);
 					for (int num = 1; num <= 7; num++) {
 						if (color == color_number[num])
 							return num;

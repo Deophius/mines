@@ -24,7 +24,7 @@ namespace Holy {
 	// Color of covered block
 	constexpr int color_blank =  0xC0C0C0;
 	// Name of the minesweeper program
-	const std::string_view minesweeper_class = "Minesweeper";
+	const std::string minesweeper_class = "Minesweeper";
 
 	// This class handles clicking and reading
 	// So it is called a social butterfly
@@ -76,8 +76,8 @@ namespace Holy {
 		// d is the number of the set of offset
 		POINT get_read_point(int x, int y, std::size_t d = 0) const {
 			POINT read_point;
-			constexpr std::array dx = { 10, 10, 9, 9, 8, 12 };
-			constexpr std::array dy = { 9, 8, 5, 4, 5, 13 };
+			constexpr std::array<int, 6> dx = { 10, 10, 9, 9, 8, 12 };
+			constexpr std::array<int, 6> dy = { 9, 8, 5, 4, 5, 13 };
 			static_assert(dx.size() == dy.size(), "Array lengths of dx and dy \
 				must match");
 			if (d >= dx.size())

@@ -9,9 +9,6 @@
 #include <array>
 #include <sstream>
 #include <string_view>
-
-/** @file Final actions that happen during scope cleanup */
-/// @author Deophius
 #include <type_traits>
 #include <utility>
 

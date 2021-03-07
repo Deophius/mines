@@ -31,6 +31,8 @@ namespace Holy {
 		RECT mWindowArea;
 		// The left up corner of the game board
 		constexpr static POINT mGameBoard{ 15, 100 };
+		// The dx and dy for the restart button
+		constexpr static POINT mSmileButton{ 254, 74 };
 		// The pixels of each block
 		constexpr static double x_step = 15.96667, y_step = 15.9375;
 		// The handle to the game window
@@ -124,18 +126,18 @@ namespace Holy {
 			if (x < 1 || x > 30 || y < 1 || y > 16)
 				throw std::out_of_range("Position not defined");
 			POINT actual = get_click_point(x, y);
-			SetCursorPos(actual.x, actual.y);
-			mouse_event(MOUSEEVENTF_LEFTDOWN, actual.x, actual.y, 0, 0);
-			mouse_event(MOUSEEVENTF_LEFTUP, actual.x, actual.y, 0, 0);
+			::SetCursorPos(actual.x, actual.y);
+			::mouse_event(MOUSEEVENTF_LEFTDOWN, actual.x, actual.y, 0, 0);
+			::mouse_event(MOUSEEVENTF_LEFTUP, actual.x, actual.y, 0, 0);
 			mRefresh = true;
 		}
 
 		// Gets the focus for minesweeper
 		void get_focus() {
 			POINT actual = get_click_point(0, 0);
-			SetCursorPos(actual.x, actual.y);
-			mouse_event(MOUSEEVENTF_LEFTDOWN, actual.x, actual.y, 0, 0);
-			mouse_event(MOUSEEVENTF_LEFTUP, actual.x, actual.y, 0, 0);
+			::SetCursorPos(actual.x, actual.y);
+			::mouse_event(MOUSEEVENTF_LEFTDOWN, actual.x, actual.y, 0, 0);
+			::mouse_event(MOUSEEVENTF_LEFTUP, actual.x, actual.y, 0, 0);
 		}
 
 		// Read the number at (x, y)
@@ -155,15 +157,21 @@ namespace Holy {
 			}
 			return 0;
 		}
+
+		// Restart the game by clicking the smiling token
+		void restart() {
+			int x = mWindowArea.left + mSmileButton.x;
+			int y = mWindowArea.top + mSmileButton.y;
+			::SetCursorPos(x, y);
+			::mouse_event(MOUSEEVENTF_LEFTDOWN, x, y, 0, 0);
+			::mouse_event(MOUSEEVENTF_LEFTUP, x, y, 0, 0);
+			mRefresh = true;
+		}
 	};
 }
 
 int main() {
 	Holy::Butterfly butterfly;
-	for (int iy = 1; iy <= Holy::row; iy++) {
-		for (int ix = 1; ix <= Holy::col; ix++) {
-			std::cout << butterfly.read_block(ix, iy) << ' ';
-		}
-		std::cout << std::endl;
-	}
+	butterfly.get_focus();
+	butterfly.restart();
 }

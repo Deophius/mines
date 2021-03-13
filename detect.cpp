@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string_view>
 #include <type_traits>
+#include <chrono>
 #include <utility>
 
 namespace Holy {
@@ -171,8 +172,22 @@ namespace Holy {
 	};
 }
 
-int main() {
+void test() {
 	Holy::Butterfly butterfly;
-	butterfly.get_focus();
-	butterfly.restart();
+	for (int ix = 1; ix <= Holy::col; ix++) {
+		for (int iy = 1; iy <= Holy::row; iy++)
+			int num = butterfly.read_block(ix, iy);
+	}
+}
+
+int main() {
+	using Clock = std::chrono::steady_clock;
+	int T = 100;
+	auto begin_time = Clock::now();
+	while (T--)
+		test();
+	auto end_time = Clock::now();
+	auto each = std::chrono::duration_cast<std::chrono::milliseconds>
+		(end_time - begin_time);
+	std::cout << (each.count() / 1000.0) << std::endl;
 }

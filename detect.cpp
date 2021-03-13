@@ -118,6 +118,7 @@ namespace Holy {
 		virtual ~Butterfly() noexcept {
 			// Let's assume the release will succeed, or the program crashes
 			::ReleaseDC(mWindow, mScreenDC);
+			::DeleteDC(mMemoryDC);
 		}
 
 		// x, y -- the coordinate of the block from left top

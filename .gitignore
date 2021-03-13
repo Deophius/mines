@@ -18,3 +18,5 @@
 
 # Executables
 *.exe
+
+.vscode/*

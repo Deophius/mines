@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <iostream>
 #include <array>
+#include <vector>
 #include <sstream>
 #include <string_view>
 #include <type_traits>
@@ -170,24 +171,117 @@ namespace Holy {
 			mRefresh = true;
 		}
 	};
-}
 
-void test() {
-	Holy::Butterfly butterfly;
-	for (int ix = 1; ix <= Holy::col; ix++) {
-		for (int iy = 1; iy <= Holy::row; iy++)
-			int num = butterfly.read_block(ix, iy);
+	// This struct stores the basic data of a block
+	struct Block {
+		// status of block
+		enum Status {
+			unknown, mine, number
+		};
+		Status status = unknown;
+		// label read from screen (0 if status != number)
+		int label = 0;
+		// effective label (0 if status != number)
+		int elabel = 0;
+	};
+
+	// This class stores the basic data of the game
+	struct GameData {
+		// Array of the blocks
+		std::array<std::array<Block, row + 1>, col + 1> blocks;
+		// The mines left unprobed
+		int mines_left = mines;
+
+		// This function resets *this to initial state
+		[[maybe_unused]] void init() {
+			for (auto& i : blocks) {
+				for (auto& block : i) {
+					block.elabel = block.label = 0;
+					block.status = Block::unknown;
+				}
+			}
+			mines_left = mines;
+		}
+	};
+
+	// Helper function that calculates the hash of a coordinate
+	inline constexpr int hash_point(int x, int y) {
+		return x + y * col;
 	}
+
+	// coordinate of a block
+	using Coord = POINT;
+
+	// This struct contains find_homo and its helper functions
+	struct HOMOfinder {
+	public:
+		// The type that's used to keep track of what's visited and what's not
+		using Checklist = std::array<bool, hash_point(col, row) + 5>;
+
+		// Vector to represent HOMO
+		using HOMO = std::vector<Coord>;
+	// FIXME: public because of testing
+	public:
+		// Helper function that uses DFS to find out the exterior HOMO
+		// When not called recursively, expects that currp is valid
+		// and vis is all false, output is empty
+		// When called recursively, does not assume vis and output are empty,
+		// but currp is valid and contains a number, and not in vis
+		static void find_exterior(Coord currp, Checklist& vis, HOMO& output,
+			const GameData& game_data) {
+			// Prerequesite says that currp is a number, and not enlisted
+			output.push_back(currp);
+			vis[hash_point(currp.x, currp.y)] = true;
+			// Direction deltas
+			constexpr int dx[] = { 0, 0, 1, -1 };
+			constexpr int dy[] = { 1, -1, 0, 0 };
+			// enumerate the candidates for next recursion
+			for (int k = 0; k <= 3; k++) {
+				Coord nextp{ currp.x + dx[k], currp.y + dy[k] };
+				if (nextp.x < 1 || nextp.x > col || nextp.y < 1 || nextp.y > row)
+					continue;
+				if (vis[hash_point(nextp.x, nextp.y)]) {
+					std::cerr << "Elim " << nextp.x << ' ' << nextp.y << std::endl;
+					continue;
+				}
+				if (game_data.blocks[nextp.x][nextp.y].status == Block::number &&
+					game_data.blocks[nextp.x][nextp.y].label != 0)
+					find_exterior(nextp, vis, output, game_data);
+			}
+		}
+	};
 }
 
 int main() {
-	using Clock = std::chrono::steady_clock;
-	int T = 100;
-	auto begin_time = Clock::now();
-	while (T--)
-		test();
-	auto end_time = Clock::now();
-	auto each = std::chrono::duration_cast<std::chrono::milliseconds>
-		(end_time - begin_time);
-	std::cout << (each.count() / 1000.0) << std::endl;
+	// The point to start search
+	std::cout << "Please input x, y of the initial point" << std::endl;
+	Holy::Coord start;
+	std::cin >> start.x >> start.y;
+	Holy::Butterfly butterfly;
+	Holy::GameData game_data;
+	Holy::HOMOfinder homo_finder;
+	for (int ix = 1; ix <= Holy::col; ix++) {
+		for (int iy = 1; iy <= Holy::row; iy++) {
+			Holy::Block& block = game_data.blocks[ix][iy];
+			game_data.blocks[ix][iy].label = butterfly.read_block(ix, iy);
+			if (block.label != 0)
+				block.status = block.number;
+		}
+	}
+	for (int iy = 1; iy <= Holy::row; iy++) {
+		for (int ix = 1; ix <= Holy::col; ix++) {
+			const auto& block = game_data.blocks[ix][iy];
+			if (block.label != 0)
+				std::cout << block.label << ' ';
+			else
+				std::cout << "  ";
+		}
+		std::cout << '\n';
+	}
+	Holy::HOMOfinder::HOMO homo;
+	Holy::HOMOfinder::Checklist checklist;
+	checklist.fill(false);
+	homo_finder.find_exterior(start, checklist, homo, game_data);
+	for (auto [ix, iy] : homo)
+		std::cout << ix << " " << iy << std::endl;
 }

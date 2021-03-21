@@ -220,8 +220,7 @@ namespace Holy {
 
 		// Vector to represent HOMO
 		using HOMO = std::vector<Coord>;
-	// FIXME: public because of testing
-	public:
+	private:
 		// Helper function that uses DFS to find out the exterior HOMO
 		// When not called recursively, expects that currp is valid
 		// and vis is all false, output is empty
@@ -240,14 +239,52 @@ namespace Holy {
 				Coord nextp{ currp.x + dx[k], currp.y + dy[k] };
 				if (nextp.x < 1 || nextp.x > col || nextp.y < 1 || nextp.y > row)
 					continue;
-				if (vis[hash_point(nextp.x, nextp.y)]) {
-					std::cerr << "Elim " << nextp.x << ' ' << nextp.y << std::endl;
+				if (vis[hash_point(nextp.x, nextp.y)])
 					continue;
-				}
-				if (game_data.blocks[nextp.x][nextp.y].status == Block::number &&
-					game_data.blocks[nextp.x][nextp.y].label != 0)
+				if (game_data.blocks[nextp.x][nextp.y].status == Block::number)
 					find_exterior(nextp, vis, output, game_data);
 			}
+		}
+
+		// Recursively searches for HOMO (helper)
+		// output written to output
+		// Assumes that currp is valid
+		static void search_recurse(Coord currp, Checklist& vis,
+			std::vector<HOMO>& output, const GameData& game_data) {
+			// Have visited this one, applies also in find_exterior()
+			vis[hash_point(currp.x, currp.y)] = true;
+			// Direction deltas
+			constexpr int dx[] = { 0, 0, 1, -1 };
+			constexpr int dy[] = { 1, -1, 0, 0 };
+			// If the current block is a number, then we can start finding one
+			const Block& currb = game_data.blocks[currp.x][currp.y];
+			if (currb.status == currb.number) {
+				output.emplace_back();
+				find_exterior(currp, vis, output.back(), game_data);
+			}
+			// Not a number, empty (can't be mine), advance to each direction
+			// It doesn't matter if the current one is a number, because we share
+			// the vis with find_exterior()
+			for (int k = 0; k <= 3; k++) {
+				Coord nextp { currp.x + dx[k], currp.y + dy[k] };
+				if (nextp.x <= 0 || nextp.x > col || nextp.y <= 0 || nextp.y >= row)
+					continue;
+				if (vis[hash_point(nextp.x, nextp.y)])
+					continue;
+				search_recurse(nextp, vis, output, game_data);
+			}
+		}
+
+	public:
+		// Searches for HOMOs starting from specified point.
+		// currp is the current point under investigation
+		// returns a vector of the HOMOs found
+		static std::vector<HOMO> search(Coord currp, const GameData& game_data) {
+			std::vector<HOMO> result;
+			result.reserve(1);
+			Checklist vis{ false };
+			search_recurse(currp, vis, result, game_data);
+			return result;
 		}
 	};
 }
@@ -259,7 +296,6 @@ int main() {
 	std::cin >> start.x >> start.y;
 	Holy::Butterfly butterfly;
 	Holy::GameData game_data;
-	Holy::HOMOfinder homo_finder;
 	for (int ix = 1; ix <= Holy::col; ix++) {
 		for (int iy = 1; iy <= Holy::row; iy++) {
 			Holy::Block& block = game_data.blocks[ix][iy];
@@ -278,10 +314,12 @@ int main() {
 		}
 		std::cout << '\n';
 	}
-	Holy::HOMOfinder::HOMO homo;
-	Holy::HOMOfinder::Checklist checklist;
-	checklist.fill(false);
-	homo_finder.find_exterior(start, checklist, homo, game_data);
-	for (auto [ix, iy] : homo)
-		std::cout << ix << " " << iy << std::endl;
+	auto homos = Holy::HOMOfinder::search(start, game_data);
+	std::cout << "There are " << homos.size() << " HOMOs found.\n";
+	for (std::size_t i = 0; i < homos.size(); i++) {
+		std::cout << "\nHOMO " << i << ":\n";
+		for (auto [x, y] : homos[i]) {
+			std::cout << x << ' ' << y << '\n';
+		}
+	}
 }

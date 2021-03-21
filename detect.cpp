@@ -286,6 +286,20 @@ namespace Holy {
 			search_recurse(currp, vis, result, game_data);
 			return result;
 		}
+
+		// Try and find all the HOMOs by specifying various starting points
+		static std::vector<HOMO> search(const GameData& game_data) {
+			std::vector<HOMO> result;
+			result.reserve(1);
+			Checklist vis{ false };
+			for (int ix = 1 ; ix <= col; ix++) {
+				for (int iy = 1; iy <= row; iy++) {
+					if (!vis[hash_point(ix, iy)])
+						search_recurse({ ix, iy }, vis, result, game_data);
+				}
+			}
+			return result;
+		}
 	};
 }
 
@@ -314,7 +328,7 @@ int main() {
 		}
 		std::cout << '\n';
 	}
-	auto homos = Holy::HOMOfinder::search(start, game_data);
+	auto homos = Holy::HOMOfinder::search(game_data);
 	std::cout << "There are " << homos.size() << " HOMOs found.\n";
 	for (std::size_t i = 0; i < homos.size(); i++) {
 		std::cout << "\nHOMO " << i << ":\n";

@@ -305,9 +305,6 @@ namespace Holy {
 
 int main() {
 	// The point to start search
-	std::cout << "Please input x, y of the initial point" << std::endl;
-	Holy::Coord start;
-	std::cin >> start.x >> start.y;
 	Holy::Butterfly butterfly;
 	Holy::GameData game_data;
 	for (int ix = 1; ix <= Holy::col; ix++) {
@@ -318,22 +315,15 @@ int main() {
 				block.status = block.number;
 		}
 	}
-	for (int iy = 1; iy <= Holy::row; iy++) {
-		for (int ix = 1; ix <= Holy::col; ix++) {
-			const auto& block = game_data.blocks[ix][iy];
-			if (block.label != 0)
-				std::cout << block.label << ' ';
-			else
-				std::cout << "  ";
-		}
-		std::cout << '\n';
+	// Start of the test
+	int T = 100000;
+	using namespace std::chrono;
+	std::cout << "Test begins" << std::endl;
+	auto test_start = steady_clock::now();
+	for (int i = 0; i < T; i++) {
+		auto homos = Holy::HOMOfinder::search(game_data);
 	}
-	auto homos = Holy::HOMOfinder::search(game_data);
-	std::cout << "There are " << homos.size() << " HOMOs found.\n";
-	for (std::size_t i = 0; i < homos.size(); i++) {
-		std::cout << "\nHOMO " << i << ":\n";
-		for (auto [x, y] : homos[i]) {
-			std::cout << x << ' ' << y << '\n';
-		}
-	}
+	auto test_end = steady_clock::now();
+	double all_ms = duration_cast<milliseconds>(test_end - test_start).count();
+	std::cout << "every test took " << (all_ms / T) << "ms\n";
 }

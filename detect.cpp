@@ -224,6 +224,17 @@ namespace Holy {
 			}
 			mines_left = mines;
 		}
+
+		// A shorthand for accessing a given Block
+		// Does not check for out_of_bound errors, to make noexcept promise
+		// According to language standard, only one argument
+		Block& operator[] (Coord p) noexcept {
+			return blocks[p.x][p.y];
+		}
+
+		const Block& operator[] (Coord p) const noexcept {
+			return blocks[p.x][p.y];
+		}
 	};
 
 	// This struct contains find_homo and its helper functions
@@ -255,7 +266,7 @@ namespace Holy {
 					continue;
 				if (vis[hash_point(nextp)])
 					continue;
-				if (game_data.blocks[nextp.x][nextp.y].status == Block::number)
+				if (game_data[nextp].status == Block::number)
 					find_exterior(nextp, vis, output, game_data);
 			}
 		}
@@ -271,7 +282,7 @@ namespace Holy {
 			constexpr int dx[] = { 0, 0, 1, -1 };
 			constexpr int dy[] = { 1, -1, 0, 0 };
 			// If the current block is a number, then we can start finding one
-			const Block& currb = game_data.blocks[currp.x][currp.y];
+			const Block& currb = game_data[currp];
 			if (currb.status == currb.number) {
 				output.emplace_back();
 				find_exterior(currp, vis, output.back(), game_data);
@@ -323,8 +334,8 @@ int main() {
 	Holy::GameData game_data;
 	for (int ix = 1; ix <= Holy::col; ix++) {
 		for (int iy = 1; iy <= Holy::row; iy++) {
-			Holy::Block& block = game_data.blocks[ix][iy];
-			game_data.blocks[ix][iy].label = butterfly.read_block(ix, iy);
+			Holy::Block& block = game_data[{ ix, iy }];
+			block.label = butterfly.read_block(ix, iy);
 			if (block.label != 0)
 				block.status = block.number;
 		}

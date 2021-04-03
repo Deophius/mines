@@ -25,6 +25,28 @@ namespace Holy {
 	// Name of the minesweeper program
 	const std::string minesweeper_class = "Minesweeper";
 
+	// Helper function that tells if (x, y) is out of bound
+	inline bool out_of_bound(int x, int y) noexcept {
+		return x < 1 || x > 30 || y < 1 || y > 16;
+	}
+
+	inline bool out_of_bound(POINT p) noexcept {
+		return out_of_bound(p.x, p.y);
+	}
+
+
+	// Helper function that calculates the hash of a coordinate
+	inline constexpr int hash_point(int x, int y) {
+		return x + y * col;
+	}
+
+	inline constexpr int hash_point(POINT p) {
+		return hash_point(p.x, p.y);
+	}
+
+	// coordinate of a block
+	using Coord = POINT;
+
 	// This class handles clicking and reading
 	// So it is called a social butterfly
 	class Butterfly {
@@ -126,7 +148,7 @@ namespace Holy {
 		// x, y -- the coordinate of the block from left top
 		// left top is marked as (1, 1), right bottom as (30, 16)
 		void left_click(int x, int y) {
-			if (x < 1 || x > 30 || y < 1 || y > 16)
+			if (out_of_bound(x, y))
 				throw std::out_of_range("Position not defined");
 			POINT actual = get_click_point(x, y);
 			::SetCursorPos(actual.x, actual.y);
@@ -146,7 +168,7 @@ namespace Holy {
 		// Read the number at (x, y)
 		// return 0 if the block is unopened or really is 0
 		int read_block(int x, int y) {
-			if (x < 1 || x > 30 || y < 1 || y > 16)
+			if (out_of_bound(x, y))
 				throw std::out_of_range("Position not defined!");
 			refresh_bitmaps();
 			for (int d = 0; d < kDeltaPairs; d++) {
@@ -204,14 +226,6 @@ namespace Holy {
 		}
 	};
 
-	// Helper function that calculates the hash of a coordinate
-	inline constexpr int hash_point(int x, int y) {
-		return x + y * col;
-	}
-
-	// coordinate of a block
-	using Coord = POINT;
-
 	// This struct contains find_homo and its helper functions
 	struct HOMOfinder {
 	public:
@@ -230,16 +244,16 @@ namespace Holy {
 			const GameData& game_data) {
 			// Prerequesite says that currp is a number, and not enlisted
 			output.push_back(currp);
-			vis[hash_point(currp.x, currp.y)] = true;
+			vis[hash_point(currp)] = true;
 			// Direction deltas
 			constexpr int dx[] = { 0, 0, 1, -1 };
 			constexpr int dy[] = { 1, -1, 0, 0 };
 			// enumerate the candidates for next recursion
 			for (int k = 0; k <= 3; k++) {
 				Coord nextp{ currp.x + dx[k], currp.y + dy[k] };
-				if (nextp.x < 1 || nextp.x > col || nextp.y < 1 || nextp.y > row)
+				if (out_of_bound(nextp))
 					continue;
-				if (vis[hash_point(nextp.x, nextp.y)])
+				if (vis[hash_point(nextp)])
 					continue;
 				if (game_data.blocks[nextp.x][nextp.y].status == Block::number)
 					find_exterior(nextp, vis, output, game_data);
@@ -252,7 +266,7 @@ namespace Holy {
 		static void search_recurse(Coord currp, Checklist& vis,
 			std::vector<HOMO>& output, const GameData& game_data) {
 			// Have visited this one, applies also in find_exterior()
-			vis[hash_point(currp.x, currp.y)] = true;
+			vis[hash_point(currp)] = true;
 			// Direction deltas
 			constexpr int dx[] = { 0, 0, 1, -1 };
 			constexpr int dy[] = { 1, -1, 0, 0 };
@@ -267,9 +281,9 @@ namespace Holy {
 			// the vis with find_exterior()
 			for (int k = 0; k <= 3; k++) {
 				Coord nextp { currp.x + dx[k], currp.y + dy[k] };
-				if (nextp.x <= 0 || nextp.x > col || nextp.y <= 0 || nextp.y >= row)
+				if (out_of_bound(nextp))
 					continue;
-				if (vis[hash_point(nextp.x, nextp.y)])
+				if (vis[hash_point(nextp)])
 					continue;
 				search_recurse(nextp, vis, output, game_data);
 			}

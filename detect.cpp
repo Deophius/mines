@@ -300,6 +300,30 @@ namespace Holy {
 			}
 		}
 
+		// Helper function that marks points read 0 as blank
+		// currp is a point that's known to be blank, expands in 8 directions
+		// On first call, requires that vis is all false
+		// output written to game_data
+		// I think this function can make the noexcept promise
+		static void mark_empty(Coord currp, Checklist& vis, GameData& game) noexcept {
+			vis[hash_point(currp.x, currp.y)] = true;
+			auto& currb = game[currp];
+			currb.status = currb.number;
+			currb.label = currb.elabel = 0;
+			constexpr int dx[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
+			constexpr int dy[] = { -1, -1, -1, 0, 0, 1, 1, 1 };
+			for (int i = 0; i < 8; i++) {
+				Coord nextp{ currp.x + dx[i], currp.y + dy[i] };
+				if (out_of_bound(nextp))
+					continue;
+				if (vis[hash_point(nextp)])
+					continue;
+				if (game[nextp].label == 0
+					&& game[nextp].label == game[nextp].unknown)
+					mark_empty(nextp, vis, game);
+			}
+		}
+
 	public:
 		// Searches for HOMOs starting from specified point.
 		// currp is the current point under investigation
@@ -325,6 +349,16 @@ namespace Holy {
 			}
 			return result;
 		}
+
+		// porcelain function to mark empty blocks that are newly discovered
+		// startp is a block that is known to be empty. Such confidence usually
+		// comes from a previous click in Butterfly
+		// game_data is the game. Output parameter!
+		static void mark_empty(Coord startp, GameData& game_data) noexcept {
+			Checklist vis;
+			vis.fill(false);
+			mark_empty(startp, vis, game_data);
+		}
 	};
 }
 
@@ -340,15 +374,20 @@ int main() {
 				block.status = block.number;
 		}
 	}
-	// Start of the test
-	int T = 100000;
-	using namespace std::chrono;
-	std::cout << "Test begins" << std::endl;
-	auto test_start = steady_clock::now();
-	for (int i = 0; i < T; i++) {
-		auto homos = Holy::HOMOfinder::search(game_data);
+	// Start the search from here
+	using namespace Holy;
+	Coord startp;
+	std::cin >> startp.x >> startp.y;
+	// Suppose input is correct
+	Holy::HOMOfinder::mark_empty(startp, game_data);
+	std::cout << "The following is the new map (e for empty markers)\n\n";
+	for (int iy = 1; iy <= Holy::row; iy++) {
+		for (int ix = 1; ix <= Holy::col; ix++) {
+			auto& block = game_data[{ ix, iy }];
+			std::cout << ((block.status == block.number && block.label == 0) ?
+				'e' : '.');
+			std::cout << ' ';
+		}
+		std::cout << '\n';
 	}
-	auto test_end = steady_clock::now();
-	double all_ms = duration_cast<milliseconds>(test_end - test_start).count();
-	std::cout << "every test took " << (all_ms / T) << "ms\n";
 }

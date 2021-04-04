@@ -360,32 +360,49 @@ namespace Holy {
 			mark_empty(startp, vis, game_data);
 		}
 	};
+
+	// This function tells if we have lost, by means of more than 5 sevens
+	// butterfly is the butterfly used to communicate
+	// game_data should be a reference.
+	// While checking for whether we lost, newly read data will be written
+	// into game_data. If we lost, game_data will NOT be initialized.
+	// Does NOT calculate effective label along the way.
+	// Returns true if we have lost, false if we have not.
+	bool have_lost(Butterfly& butterfly, GameData& game_data) {
+		int sevens_cnt = 0;
+		for (int ix = 1; ix <= col; ix++) {
+			for (int iy = 1; iy <= row; iy++) {
+				auto& block = game_data[{ ix, iy }];
+				if (block.status == block.unknown) {
+					block.label = butterfly.read_block(ix, iy);
+					if (block.label != 0)
+						block.status = block.number;
+				}
+				if (block.label == 7) // 7 is the magic number for mine
+					sevens_cnt++;
+				if (sevens_cnt == 2)
+					return true;
+			}
+		}
+		return false;
+	}
 }
 
 int main() {
 	// The point to start search
 	Holy::Butterfly butterfly;
 	Holy::GameData game_data;
-	for (int ix = 1; ix <= Holy::col; ix++) {
-		for (int iy = 1; iy <= Holy::row; iy++) {
-			Holy::Block& block = game_data[{ ix, iy }];
-			block.label = butterfly.read_block(ix, iy);
-			if (block.label != 0)
-				block.status = block.number;
-		}
-	}
-	// Start the search from here
-	using namespace Holy;
-	Coord startp;
-	std::cin >> startp.x >> startp.y;
-	// Suppose input is correct
-	Holy::HOMOfinder::mark_empty(startp, game_data);
-	std::cout << "The following is the new map (e for empty markers)\n\n";
+	if (Holy::have_lost(butterfly, game_data))
+		std::cout << "Have lost\n";
+	else
+		std::cout << "Have not lost\n";
 	for (int iy = 1; iy <= Holy::row; iy++) {
 		for (int ix = 1; ix <= Holy::col; ix++) {
 			auto& block = game_data[{ ix, iy }];
-			std::cout << ((block.status == block.number && block.label == 0) ?
-				'e' : '.');
+			if (block.label)
+				std::cout << block.label;
+			else
+				std::cout << ' ';
 			std::cout << ' ';
 		}
 		std::cout << '\n';

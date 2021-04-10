@@ -406,11 +406,12 @@ namespace Holy {
 		using std::chrono::steady_clock;
 		std::mt19937 mt1(steady_clock::now().time_since_epoch().count());
 		using Uintd = std::uniform_int_distribution<int>;
-		auto xdist = std::bind(Uintd(1, col), mt1);
-		auto ydist = std::bind(Uintd(1, row), mt1);
+		auto ran = std::bind(Uintd(hash_point(1, 1), hash_point(col, row)), mt1);
 		// Now start the game ...
 		while (true) {
-			int x = xdist(), y = ydist();
+			int r = ran();
+			int x = r % 30 + 1;
+			int y = r / 30;
 			butterfly.left_click(x, y);
 			// To be cautious, check for losing or winning
 			// FIXME: Is there a way to improve accuracy?

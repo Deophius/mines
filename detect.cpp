@@ -4,15 +4,17 @@
 #ifdef _UNICODE
 #undef _UNICODE
 #endif
-#include <windows.h>
-#include <iostream>
 #include <array>
-#include <vector>
+#include <chrono>
+#include <functional>
+#include <iostream>
+#include <random>
 #include <sstream>
 #include <string_view>
 #include <type_traits>
-#include <chrono>
 #include <utility>
+#include <vector>
+#include <windows.h>
 
 namespace Holy {
 	constexpr int mines = 99, row = 16, col = 30;
@@ -138,6 +140,11 @@ namespace Holy {
 			mBitmap = ::CreateCompatibleBitmap(mScreenDC, mScreenWidth, mScreenHeight);
 			mOldBitmap = static_cast<HBITMAP>(::SelectObject(mMemoryDC, mBitmap));
 		}
+
+		// Must not let butterfly copy
+		Butterfly(const Butterfly& src) = delete;
+
+		Butterfly& operator= (const Butterfly& src) = delete;
 
 		virtual ~Butterfly() noexcept {
 			// Let's assume the release will succeed, or the program crashes
@@ -386,25 +393,53 @@ namespace Holy {
 		}
 		return false;
 	}
+
+	// Start the game with some recursive mad clicking
+	// butterfly and game_data with usual meanings.
+	// Does not calculates elabels along the way (that is more conveniently
+	// done in another separate func)
+	// Returns only when we have probed a zero or a mine
+	// Returns true if have not lost. false if lost
+	// named after su-zhi-san-lian
+	bool civil_clicks(Butterfly& butterfly, GameData& game_data) {
+		// Randomness generator
+		using std::chrono::steady_clock;
+		std::mt19937 mt1(steady_clock::now().time_since_epoch().count());
+		using Uintd = std::uniform_int_distribution<int>;
+		auto xdist = std::bind(Uintd(1, col), mt1);
+		auto ydist = std::bind(Uintd(1, row), mt1);
+		// Now start the game ...
+		while (true) {
+			int x = xdist(), y = ydist();
+			butterfly.left_click(x, y);
+			// To be cautious, check for losing or winning
+			// FIXME: Is there a way to improve accuracy?
+			if (have_lost(butterfly, game_data)) {
+				// std::cerr << "Lost!" << std::endl;
+				return false;
+			}
+			// Now data has been pulled in by have_lost()
+			else if (game_data[{ x, y }].label == 0) {
+				HOMOfinder::mark_empty({ x, y }, game_data);
+				return true;
+			}
+		}
+	}
 }
 
 int main() {
 	// The point to start search
 	Holy::Butterfly butterfly;
 	Holy::GameData game_data;
-	if (Holy::have_lost(butterfly, game_data))
-		std::cout << "Have lost\n";
-	else
-		std::cout << "Have not lost\n";
-	for (int iy = 1; iy <= Holy::row; iy++) {
-		for (int ix = 1; ix <= Holy::col; ix++) {
-			auto& block = game_data[{ ix, iy }];
-			if (block.label)
-				std::cout << block.label;
-			else
-				std::cout << ' ';
-			std::cout << ' ';
-		}
-		std::cout << '\n';
+	std::cout << std::boolalpha;
+	butterfly.get_focus();
+	while (true) {
+		butterfly.restart();
+		bool result = Holy::civil_clicks(butterfly, game_data);
+		std::cout << result << std::endl;
+		if (!result)
+			::MessageBeep(MB_ICONASTERISK);
+		::Sleep(1000);
+		game_data.init();
 	}
 }

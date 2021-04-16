@@ -210,8 +210,12 @@ namespace Holy {
 		Status status = unknown;
 		// label read from screen (0 if status != number)
 		int label = 0;
+		// tags whether second hand data is initialized
+		bool second_init = false;
 		// effective label (0 if status != number)
 		int elabel = 0;
+		// the number of vacant neighbors
+		int vacant_nei = 0;
 	};
 
 	// This class stores the basic data of the game
@@ -241,6 +245,39 @@ namespace Holy {
 
 		const Block& operator[] (Coord p) const noexcept {
 			return blocks[p.x][p.y];
+		}
+
+	private:
+		// Recounts the elabel of block p
+		// Does not check for out_of_range, make sure of that!
+		// Does not check that p is a number!
+		void recount(Coord p) noexcept {
+			(*this)[p].elabel = (*this)[p].label;
+			(*this)[p].vacant_nei = 0;
+			constexpr int dx[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
+			constexpr int dy[] = { -1, -1, -1, 0, 0, 1, 1, 1 };
+			for (int i = 0; i < 8; i++) {
+				Coord np{ p.x + dx[i], p.y + dy[i] };
+				if (out_of_bound(np))
+					continue;
+				// Only decrease if np is mine
+				if ((*this)[np].status == Block::mine)
+					(*this)[p].elabel--;
+				if ((*this)[np].status == Block::unknown)
+					(*this)[p].vacant_nei++;
+			}
+			(*this)[p].second_init = true;
+		}
+
+	public:
+		// Recount all the elabels, does not throw
+		void recount() noexcept {
+			for (int ix = 1; ix <= col; ix++) {
+				for (int iy = 1; iy <= row; iy++)
+					if ((*this)[{ ix, iy }].status == Block::number
+						&& !(*this)[{ ix, iy }].second_init)
+						recount({ ix, iy });
+			}
 		}
 	};
 
@@ -434,13 +471,33 @@ int main() {
 	Holy::GameData game_data;
 	std::cout << std::boolalpha;
 	butterfly.get_focus();
-	while (true) {
-		butterfly.restart();
-		bool result = Holy::civil_clicks(butterfly, game_data);
-		std::cout << result << std::endl;
-		if (!result)
-			::MessageBeep(MB_ICONASTERISK);
-		::Sleep(1000);
-		game_data.init();
+	butterfly.restart();
+	bool result = Holy::civil_clicks(butterfly, game_data);
+	std::cout << result << std::endl;
+	if (!result)
+		::MessageBeep(MB_ICONASTERISK);
+	game_data.recount();
+	std::cout << "Table of elabel:\n\n";
+	using namespace Holy;
+	for (int iy = 1; iy <= row; iy++) {
+		for (int ix = 1; ix <= col; ix++) {
+			if (game_data[{ix,iy}].status == Block::number)
+				std::cout << game_data[{ ix, iy }].elabel;
+			else
+				std::cout << ' ';
+			std::cout << ' ';
+		}
+		std::cout << '\n';
+	}
+	std::cout << "\nThe table of vacant_nei:\n\n";
+	for (int iy = 1; iy <= row; iy++) {
+		for (int ix = 1; ix <= col; ix++) {
+			if (game_data[{ix,iy}].status == Block::number)
+				std::cout << game_data[{ ix, iy }].vacant_nei;
+			else
+				std::cout << ' ';
+			std::cout << ' ';
+		}
+		std::cout << '\n';
 	}
 }

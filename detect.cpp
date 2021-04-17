@@ -216,8 +216,10 @@ namespace Holy {
 	// This struct stores the basic data of a block
 	struct Block {
 		// status of block
+		// semiknown is a state where you know a block contains a number,
+		// but do not know what the number is exactly.
 		enum Status {
-			unknown, mine, number
+			unknown, mine, number, semiknown
 		};
 		Status status = unknown;
 		// label read from screen (0 if status != number)
@@ -504,6 +506,17 @@ namespace Holy {
 		});
 	}
 
+	// Marks a block as semiknown (number, but unknown label)
+	// It decreases the neighbors' vacant_nei, but not elabel
+	// Assumes that p is an unprobed block
+	void mark_semiknown(GameData& game_data, Coord p) {
+		game_data[p].status = Block::semiknown;
+		for_each_nei8(p, [&](Coord nei) {
+			if (game_data[nei].status == Block::number)
+				game_data[nei].vacant_nei--;
+		});
+	}
+
 	// Deterministic solver that marks every neighbor of a number that satisfies
 	// elabel == vacant_nei as mine (First step to be taken!)
 	// Also marks every neighbor of a number with elabel == 0 as semiknown
@@ -518,17 +531,69 @@ namespace Holy {
 		for (auto p : homo) {
 			Block& block = game_data[p];
 			// because p is listed in HOMO, it must be a number
-			if (block.elabel == block.vacant_nei) {
+			if (block.elabel == block.vacant_nei && block.elabel) {
 				for_each_nei8(p, [&](Coord nei) {
 					if (game_data[nei].status == Block::unknown) {
 						mark_mine(game_data, nei);
+						modified = true;
 						butterfly.right_click(nei.x, nei.y);
 					}
 				});
-				modified = true;
+			} else if (block.elabel == 0 && block.vacant_nei) {
+				for_each_nei8(p, [&](Coord nei) {
+					if (game_data[nei].status == Block::unknown) {
+						mark_semiknown(game_data, nei);
+						modified = true;
+					}
+				});
 			}
 		}
 		return modified;
+	}
+}
+
+void print_elabels(const Holy::GameData& game_data) {
+	using namespace Holy;
+	std::cout << "Table of elabels\n\n";
+	for (int iy = 1; iy <= row; iy++) {
+		for (int ix = 1; ix <= col; ix++) {
+			if (game_data[{ ix, iy }].status == Block::number)
+				std::cout << game_data[{ ix, iy }].elabel;
+			else
+				std::cout << ' ';
+			std::cout.put(' ');
+		}
+		std::cout.put('\n');
+	}
+}
+
+void print_labels(const Holy::GameData& game_data) {
+	using namespace Holy;
+	std::cout << "Table of labels\n\n";
+	for (int iy = 1; iy <= row; iy++) {
+		for (int ix = 1; ix <= col; ix++) {
+			if (game_data[{ ix, iy }].status == Block::number)
+				std::cout << game_data[{ ix, iy }].label;
+			else
+				std::cout << ' ';
+			std::cout.put(' ');
+		}
+		std::cout.put('\n');
+	}
+}
+
+void print_semi(const Holy::GameData& game_data) {
+	using namespace Holy;
+	std::cout << "Table of semi\n\n";
+	for (int iy = 1; iy <= row; iy++) {
+		for (int ix = 1; ix <= col; ix++) {
+			if (game_data[{ ix, iy }].status == Block::semiknown)
+				std::cout << '.';
+			else
+				std::cout << ' ';
+			std::cout.put(' ');
+		}
+		std::cout.put('\n');
 	}
 }
 
@@ -546,9 +611,13 @@ int main() {
 		return 1;
 	}
 	game_data.recount();
+	print_labels(game_data);
 	auto homos = HOMOfinder::search(game_data);
 	std::cout << "Found " << homos.size() << " HOMOs\n";
 	for (const auto& homo : homos) {
-		roundup(game_data, butterfly, homo);
+		while (roundup(game_data, butterfly, homo))
+			;
 	}
+	print_elabels(game_data);
+	print_semi(game_data);
 }

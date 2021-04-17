@@ -281,6 +281,40 @@ namespace Holy {
 		}
 	};
 
+	// Helper function that does something for every neighbor of a specific block
+	// in 8 directions
+	// p - The coordinate of the block
+	// fn -- the function to be called. fn should be invocable with fn(Coord)
+	template <typename Fn>
+	void for_each_nei8(Coord p, Fn&& fn) {
+		static_assert(std::is_invocable_v<Fn, Coord>, "Should meet type req!");
+		constexpr int dx[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
+		constexpr int dy[] = { -1, -1, -1, 0, 0, 1, 1, 1 };
+		for (int i = 0; i < 8; i++) {
+			Coord np{ p.x + dx[i], p.y + dy[i] };
+			if (out_of_bound(np))
+				continue;
+			fn(np);
+		}
+	}
+
+	// Helper function that does something for every neighbor of a specific block
+	// in 4 directions
+	// p - The coordinate of the block
+	// fn -- the function to be called. fn should be invocable with fn(Coord)
+	template <typename Fn>
+	void for_each_nei4(Coord p, Fn&& fn) {
+		static_assert(std::is_invocable_v<Fn, Coord>, "Should meet type req!");
+		constexpr int dx[] = { 0, 0, 1, -1 };
+		constexpr int dy[] = { 1, -1, 0, 0 };
+		for (int i = 0; i < 4; i++) {
+			Coord np{ p.x + dx[i], p.y + dy[i] };
+			if (out_of_bound(np))
+				continue;
+			fn(np);
+		}
+	}
+
 	// This struct contains find_homo and its helper functions
 	struct HOMOfinder {
 	public:
@@ -300,19 +334,12 @@ namespace Holy {
 			// Prerequesite says that currp is a number, and not enlisted
 			output.push_back(currp);
 			vis[hash_point(currp)] = true;
-			// Direction deltas
-			constexpr int dx[] = { 0, 0, 1, -1 };
-			constexpr int dy[] = { 1, -1, 0, 0 };
-			// enumerate the candidates for next recursion
-			for (int k = 0; k <= 3; k++) {
-				Coord nextp{ currp.x + dx[k], currp.y + dy[k] };
-				if (out_of_bound(nextp))
-					continue;
+			for_each_nei4(currp, [&](Coord nextp) {
 				if (vis[hash_point(nextp)])
-					continue;
+					return;
 				if (game_data[nextp].status == Block::number)
 					find_exterior(nextp, vis, output, game_data);
-			}
+			});
 		}
 
 		// Recursively searches for HOMO (helper)
@@ -322,9 +349,6 @@ namespace Holy {
 			std::vector<HOMO>& output, const GameData& game_data) {
 			// Have visited this one, applies also in find_exterior()
 			vis[hash_point(currp)] = true;
-			// Direction deltas
-			constexpr int dx[] = { 0, 0, 1, -1 };
-			constexpr int dy[] = { 1, -1, 0, 0 };
 			// If the current block is a number, then we can start finding one
 			const Block& currb = game_data[currp];
 			if (currb.status == currb.number) {
@@ -334,14 +358,10 @@ namespace Holy {
 			// Not a number, empty (can't be mine), advance to each direction
 			// It doesn't matter if the current one is a number, because we share
 			// the vis with find_exterior()
-			for (int k = 0; k <= 3; k++) {
-				Coord nextp { currp.x + dx[k], currp.y + dy[k] };
-				if (out_of_bound(nextp))
-					continue;
-				if (vis[hash_point(nextp)])
-					continue;
-				search_recurse(nextp, vis, output, game_data);
-			}
+			for_each_nei4(currp, [&](Coord nextp) {
+				if (!vis[hash_point(nextp)])
+					search_recurse(nextp, vis, output, game_data);
+			});
 		}
 
 		// Helper function that marks points read 0 as blank
@@ -354,18 +374,13 @@ namespace Holy {
 			auto& currb = game[currp];
 			currb.status = currb.number;
 			currb.label = currb.elabel = 0;
-			constexpr int dx[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
-			constexpr int dy[] = { -1, -1, -1, 0, 0, 1, 1, 1 };
-			for (int i = 0; i < 8; i++) {
-				Coord nextp{ currp.x + dx[i], currp.y + dy[i] };
-				if (out_of_bound(nextp))
-					continue;
+			for_each_nei8(currp, [&](Coord nextp) {
 				if (vis[hash_point(nextp)])
-					continue;
+					return;
 				if (game[nextp].label == 0
 					&& game[nextp].label == game[nextp].unknown)
 					mark_empty(nextp, vis, game);
-			}
+			});
 		}
 
 	public:

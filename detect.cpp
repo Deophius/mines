@@ -164,6 +164,18 @@ namespace Holy {
 			mRefresh = true;
 		}
 
+		// x, y -- the coordinate of the block from left top
+		// left top is marked as (1, 1), right bottom as (30, 16)
+		void right_click(int x, int y) {
+			if (out_of_bound(x, y))
+				throw std::out_of_range("Position not defined");
+			POINT actual = get_click_point(x, y);
+			::SetCursorPos(actual.x, actual.y);
+			::mouse_event(MOUSEEVENTF_RIGHTDOWN, actual.x, actual.y, 0, 0);
+			::mouse_event(MOUSEEVENTF_RIGHTUP, actual.x, actual.y, 0, 0);
+			mRefresh = true;
+		}
+
 		// Gets the focus for minesweeper
 		void get_focus() {
 			POINT actual = get_click_point(0, 0);
@@ -478,41 +490,65 @@ namespace Holy {
 			}
 		}
 	}
+
+	// Helper that marks a block as mine
+	// It decreases the neighbors' vacant_nei and elabel
+	// Assumes that p is an unprobed block
+	void mark_mine(GameData& game_data, Coord p) {
+		game_data[p].status = Block::mine;
+		for_each_nei8(p, [&game_data](Coord nei) {
+			if (game_data[nei].status == Block::number) {
+				game_data[nei].elabel--;
+				game_data[nei].vacant_nei--;
+			}
+		});
+	}
+
+	// Deterministic solver that marks every neighbor of a number that satisfies
+	// elabel == vacant_nei as mine (First step to be taken!)
+	// Also marks every neighbor of a number with elabel == 0 as semiknown
+	// game_data, butterfly -- the two basic components of the game
+	// HOMO -- the list of numbers to inspect
+	// To be defensive, we will recount the data here, but no screen reading
+	// If we made any modifications to game_data, returns true
+	// Otherwise, return false and it's time to go on to another solver
+	bool roundup(GameData& game_data, Butterfly& butterfly, const HOMOfinder::HOMO& homo) {
+		game_data.recount();
+		bool modified = false;
+		for (auto p : homo) {
+			Block& block = game_data[p];
+			// because p is listed in HOMO, it must be a number
+			if (block.elabel == block.vacant_nei) {
+				for_each_nei8(p, [&](Coord nei) {
+					if (game_data[nei].status == Block::unknown) {
+						mark_mine(game_data, nei);
+						butterfly.right_click(nei.x, nei.y);
+					}
+				});
+				modified = true;
+			}
+		}
+		return modified;
+	}
 }
 
 int main() {
-	// The point to start search
-	Holy::Butterfly butterfly;
-	Holy::GameData game_data;
+	using namespace Holy;
+	Butterfly butterfly;
+    GameData game_data;
 	std::cout << std::boolalpha;
 	butterfly.get_focus();
 	butterfly.restart();
-	bool result = Holy::civil_clicks(butterfly, game_data);
-	std::cout << result << std::endl;
-	if (!result)
+	bool result = civil_clicks(butterfly, game_data);
+	if (!result) {
+		std::cout << "Civil clicks failed!\n";
 		::MessageBeep(MB_ICONASTERISK);
-	game_data.recount();
-	std::cout << "Table of elabel:\n\n";
-	using namespace Holy;
-	for (int iy = 1; iy <= row; iy++) {
-		for (int ix = 1; ix <= col; ix++) {
-			if (game_data[{ix,iy}].status == Block::number)
-				std::cout << game_data[{ ix, iy }].elabel;
-			else
-				std::cout << ' ';
-			std::cout << ' ';
-		}
-		std::cout << '\n';
+		return 1;
 	}
-	std::cout << "\nThe table of vacant_nei:\n\n";
-	for (int iy = 1; iy <= row; iy++) {
-		for (int ix = 1; ix <= col; ix++) {
-			if (game_data[{ix,iy}].status == Block::number)
-				std::cout << game_data[{ ix, iy }].vacant_nei;
-			else
-				std::cout << ' ';
-			std::cout << ' ';
-		}
-		std::cout << '\n';
+	game_data.recount();
+	auto homos = HOMOfinder::search(game_data);
+	std::cout << "Found " << homos.size() << " HOMOs\n";
+	for (const auto& homo : homos) {
+		roundup(game_data, butterfly, homo);
 	}
 }

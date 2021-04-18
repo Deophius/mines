@@ -49,6 +49,40 @@ namespace Holy {
 	// coordinate of a block
 	using Coord = POINT;
 
+	// Helper function that does something for every neighbor of a specific block
+	// in 8 directions
+	// p - The coordinate of the block
+	// fn -- the function to be called. fn should be invocable with fn(Coord)
+	template <typename Fn>
+	void for_each_nei8(Coord p, Fn&& fn) {
+		static_assert(std::is_invocable_v<Fn, Coord>, "Should meet type req!");
+		constexpr int dx[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
+		constexpr int dy[] = { -1, -1, -1, 0, 0, 1, 1, 1 };
+		for (int i = 0; i < 8; i++) {
+			Coord np{ p.x + dx[i], p.y + dy[i] };
+			if (out_of_bound(np))
+				continue;
+			fn(np);
+		}
+	}
+
+	// Helper function that does something for every neighbor of a specific block
+	// in 4 directions
+	// p - The coordinate of the block
+	// fn -- the function to be called. fn should be invocable with fn(Coord)
+	template <typename Fn>
+	void for_each_nei4(Coord p, Fn&& fn) {
+		static_assert(std::is_invocable_v<Fn, Coord>, "Should meet type req!");
+		constexpr int dx[] = { 0, 0, 1, -1 };
+		constexpr int dy[] = { 1, -1, 0, 0 };
+		for (int i = 0; i < 4; i++) {
+			Coord np{ p.x + dx[i], p.y + dy[i] };
+			if (out_of_bound(np))
+				continue;
+			fn(np);
+		}
+	}
+
 	// This class handles clicking and reading
 	// So it is called a social butterfly
 	class Butterfly {
@@ -293,41 +327,50 @@ namespace Holy {
 						recount({ ix, iy });
 			}
 		}
+
+		// Marks a block as semiknown (number, but unknown label)
+		// It decreases the neighbors' vacant_nei, but not elabel
+		// Assumes that p is an unprobed block and not out of bound
+		void mark_semiknown(Coord p) noexcept {
+			(*this)[p].status = Block::semiknown;
+			for_each_nei8(p, [&](Coord nei) {
+				if ((*this)[nei].status == Block::number)
+					(*this)[nei].vacant_nei--;
+			});
+		}
+
+		// Helper that marks a block as mine
+		// It decreases the neighbors' vacant_nei and elabel
+		// Assumes that p is an unprobed block and not out of bound
+		void mark_mine(Coord p) noexcept {
+			(*this)[p].status = Block::mine;
+			for_each_nei8(p, [&](Coord nei) {
+				if ((*this)[nei].status == Block::number) {
+					(*this)[nei].elabel--;
+					(*this)[nei].vacant_nei--;
+				}
+			});
+		}
+
+		// Probes all blocks marked with semi and read the label,
+		// calculates vacant_nei and elabel, and stores them in game_data
+		// Does not call have_lost()
+		void probe_semiknown(Butterfly& butterfly) {
+			std::vector<Coord> clicked;
+			for (int ix = 1; ix <= col; ix++) {
+				for (int iy = 1; iy <= row; iy++) {
+					Coord p { ix, iy };
+					if ((*this)[p].status == Block::semiknown) {
+						butterfly.left_click(ix, iy);
+						clicked.push_back({ ix, iy });
+					}
+				}
+			}
+			// FIXME: How to deal with probing an empty number?
+		}
 	};
 
-	// Helper function that does something for every neighbor of a specific block
-	// in 8 directions
-	// p - The coordinate of the block
-	// fn -- the function to be called. fn should be invocable with fn(Coord)
-	template <typename Fn>
-	void for_each_nei8(Coord p, Fn&& fn) {
-		static_assert(std::is_invocable_v<Fn, Coord>, "Should meet type req!");
-		constexpr int dx[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
-		constexpr int dy[] = { -1, -1, -1, 0, 0, 1, 1, 1 };
-		for (int i = 0; i < 8; i++) {
-			Coord np{ p.x + dx[i], p.y + dy[i] };
-			if (out_of_bound(np))
-				continue;
-			fn(np);
-		}
-	}
 
-	// Helper function that does something for every neighbor of a specific block
-	// in 4 directions
-	// p - The coordinate of the block
-	// fn -- the function to be called. fn should be invocable with fn(Coord)
-	template <typename Fn>
-	void for_each_nei4(Coord p, Fn&& fn) {
-		static_assert(std::is_invocable_v<Fn, Coord>, "Should meet type req!");
-		constexpr int dx[] = { 0, 0, 1, -1 };
-		constexpr int dy[] = { 1, -1, 0, 0 };
-		for (int i = 0; i < 4; i++) {
-			Coord np{ p.x + dx[i], p.y + dy[i] };
-			if (out_of_bound(np))
-				continue;
-			fn(np);
-		}
-	}
 
 	// This struct contains find_homo and its helper functions
 	struct HOMOfinder {
@@ -493,30 +536,6 @@ namespace Holy {
 		}
 	}
 
-	// Helper that marks a block as mine
-	// It decreases the neighbors' vacant_nei and elabel
-	// Assumes that p is an unprobed block
-	void mark_mine(GameData& game_data, Coord p) {
-		game_data[p].status = Block::mine;
-		for_each_nei8(p, [&game_data](Coord nei) {
-			if (game_data[nei].status == Block::number) {
-				game_data[nei].elabel--;
-				game_data[nei].vacant_nei--;
-			}
-		});
-	}
-
-	// Marks a block as semiknown (number, but unknown label)
-	// It decreases the neighbors' vacant_nei, but not elabel
-	// Assumes that p is an unprobed block
-	void mark_semiknown(GameData& game_data, Coord p) {
-		game_data[p].status = Block::semiknown;
-		for_each_nei8(p, [&](Coord nei) {
-			if (game_data[nei].status == Block::number)
-				game_data[nei].vacant_nei--;
-		});
-	}
-
 	// Deterministic solver that marks every neighbor of a number that satisfies
 	// elabel == vacant_nei as mine (First step to be taken!)
 	// Also marks every neighbor of a number with elabel == 0 as semiknown
@@ -534,7 +553,7 @@ namespace Holy {
 			if (block.elabel == block.vacant_nei && block.elabel) {
 				for_each_nei8(p, [&](Coord nei) {
 					if (game_data[nei].status == Block::unknown) {
-						mark_mine(game_data, nei);
+						game_data.mark_mine(nei);
 						modified = true;
 						butterfly.right_click(nei.x, nei.y);
 					}
@@ -542,7 +561,7 @@ namespace Holy {
 			} else if (block.elabel == 0 && block.vacant_nei) {
 				for_each_nei8(p, [&](Coord nei) {
 					if (game_data[nei].status == Block::unknown) {
-						mark_semiknown(game_data, nei);
+						game_data.mark_semiknown(nei);
 						modified = true;
 					}
 				});
@@ -611,13 +630,18 @@ int main() {
 		return 1;
 	}
 	game_data.recount();
-	print_labels(game_data);
 	auto homos = HOMOfinder::search(game_data);
 	std::cout << "Found " << homos.size() << " HOMOs\n";
-	for (const auto& homo : homos) {
-		while (roundup(game_data, butterfly, homo))
-			;
+	HOMOfinder::HOMO all_homo;
+	for (auto& homo : homos) {
+		for (auto&& block : homo)
+			all_homo.push_back(std::move(block));
+		homo.clear();
 	}
-	print_elabels(game_data);
-	print_semi(game_data);
+	while (roundup(game_data, butterfly, all_homo))
+		;
+	std::cout << "Continue?" << std::endl;
+	std::cin.get();
+	butterfly.get_focus();
+	game_data.probe_semiknown(butterfly);
 }

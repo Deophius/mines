@@ -351,26 +351,7 @@ namespace Holy {
 				}
 			});
 		}
-
-		// Probes all blocks marked with semi and read the label,
-		// calculates vacant_nei and elabel, and stores them in game_data
-		// Does not call have_lost()
-		void probe_semiknown(Butterfly& butterfly) {
-			std::vector<Coord> clicked;
-			for (int ix = 1; ix <= col; ix++) {
-				for (int iy = 1; iy <= row; iy++) {
-					Coord p { ix, iy };
-					if ((*this)[p].status == Block::semiknown) {
-						butterfly.left_click(ix, iy);
-						clicked.push_back({ ix, iy });
-					}
-				}
-			}
-			// FIXME: How to deal with probing an empty number?
-		}
 	};
-
-
 
 	// This struct contains find_homo and its helper functions
 	struct HOMOfinder {
@@ -503,6 +484,40 @@ namespace Holy {
 		return false;
 	}
 
+	// Probes all blocks marked with semi and read the label,
+	// calculates vacant_nei and elabel, and stores them in game_data
+	// Does not call have_lost()
+	void probe_semiknown(GameData& game_data, Butterfly& butterfly) {
+		std::vector<Coord> clicked;
+		for (int ix = 1; ix <= col; ix++) {
+			for (int iy = 1; iy <= row; iy++) {
+				Coord p { ix, iy };
+				switch (game_data[p].status) {
+				case Block::semiknown:
+					butterfly.left_click(ix, iy);
+					clicked.push_back({ ix, iy });
+					[[fallthrough]];
+				case Block::unknown:
+					game_data[p].label = butterfly.read_block(ix, iy);
+					if (game_data[p].label == 0 && game_data[p].status == Block::semiknown) {
+						game_data[p].status = Block::number;
+					} else if (game_data[p].label) {
+						game_data[p].status = Block::number;
+					}
+					break;
+				default:
+					break;
+				}
+			}
+		}
+		for (auto p : clicked) {
+			// If p is a number with 0, mark empty with it
+			if (game_data[p].label == 0)
+				HOMOfinder::mark_empty(p, game_data);
+		}
+		game_data.recount();
+	}
+
 	// Start the game with some recursive mad clicking
 	// butterfly and game_data with usual meanings.
 	// Does not calculates elabels along the way (that is more conveniently
@@ -565,49 +580,36 @@ namespace Holy {
 						modified = true;
 					}
 				});
+			} else if (block.elabel > block.vacant_nei) {
+				// FIXME: Debug code
+				std::cerr << "Reporting error on " << p.x << " " << p.y << std::endl;
+				return false;
 			}
 		}
 		return modified;
 	}
-}
 
-void print_elabels(const Holy::GameData& game_data) {
-	using namespace Holy;
-	std::cout << "Table of elabels\n\n";
-	for (int iy = 1; iy <= row; iy++) {
+	// Applies roundup on all blocks with number, otherwise same as the one above
+	bool roundup(GameData& game_data, Butterfly& butterfly) {
+		using HOMO = HOMOfinder::HOMO;
+		HOMO all_homo;
 		for (int ix = 1; ix <= col; ix++) {
-			if (game_data[{ ix, iy }].status == Block::number)
-				std::cout << game_data[{ ix, iy }].elabel;
-			else
-				std::cout << ' ';
-			std::cout.put(' ');
+			for (int iy = 1; iy <= row; iy++) {
+				if (game_data[{ ix, iy }].status == Block::number
+					&& game_data[{ ix, iy }].number)
+					all_homo.push_back({ ix, iy });
+			}
 		}
-		std::cout.put('\n');
+		return roundup(game_data, butterfly, all_homo);
 	}
 }
 
-void print_labels(const Holy::GameData& game_data) {
+void print_prop(const Holy::GameData& game_data, int Holy::Block::* prop) {
 	using namespace Holy;
-	std::cout << "Table of labels\n\n";
 	for (int iy = 1; iy <= row; iy++) {
 		for (int ix = 1; ix <= col; ix++) {
 			if (game_data[{ ix, iy }].status == Block::number)
-				std::cout << game_data[{ ix, iy }].label;
-			else
-				std::cout << ' ';
-			std::cout.put(' ');
-		}
-		std::cout.put('\n');
-	}
-}
-
-void print_semi(const Holy::GameData& game_data) {
-	using namespace Holy;
-	std::cout << "Table of semi\n\n";
-	for (int iy = 1; iy <= row; iy++) {
-		for (int ix = 1; ix <= col; ix++) {
-			if (game_data[{ ix, iy }].status == Block::semiknown)
-				std::cout << '.';
+				std::cout << game_data[{ ix, iy }].*prop;
 			else
 				std::cout << ' ';
 			std::cout.put(' ');
@@ -630,18 +632,15 @@ int main() {
 		return 1;
 	}
 	game_data.recount();
-	auto homos = HOMOfinder::search(game_data);
-	std::cout << "Found " << homos.size() << " HOMOs\n";
-	HOMOfinder::HOMO all_homo;
-	for (auto& homo : homos) {
-		for (auto&& block : homo)
-			all_homo.push_back(std::move(block));
-		homo.clear();
+	bool modified = false;
+	while (true) {
+		modified = roundup(game_data, butterfly);
+		if (!modified)
+			break;
+		probe_semiknown(game_data, butterfly);
 	}
-	while (roundup(game_data, butterfly, all_homo))
-		;
-	std::cout << "Continue?" << std::endl;
-	std::cin.get();
-	butterfly.get_focus();
-	game_data.probe_semiknown(butterfly);
+	std::cout << "List of vacant_nei:\n";
+	print_prop(game_data, &Block::vacant_nei);
+	std::cout << "List of elabels:\n";
+	print_prop(game_data, &Holy::Block::elabel);
 }

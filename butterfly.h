@@ -19,6 +19,7 @@ namespace Holy {
         // If unknown, optional is empty;
         // If contains a mine, same as unknown because you cannot "right click"
         // If probed, returns the number
+        // If start_game has not been called for this game, throws std::logic_error
         std::optional<int> read(Point p) const;
 
         // "Left clicks" at the given point, note there is right click counterpart
@@ -48,6 +49,10 @@ namespace Holy {
         // extends in click(), read by read() to control access
         // 1 if this block is OK to expose
         std::array<std::bitset<row + 1>, col + 1> mExpose;
+
+        // invariant: inits in start_game in accordance with mMined
+        // unchanged in a game
+        std::array<std::array<int, row + 1>, col + 1> mLabel;
     };
 }
 

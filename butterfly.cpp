@@ -88,4 +88,8 @@ namespace Holy {
 		}
 		return true;
 	}
+
+	bool Butterfly::in_game() const noexcept {
+		return mInGame;
+	}
 }

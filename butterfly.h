@@ -35,6 +35,10 @@ namespace Holy {
         // Throws std::logic_error if start_game has not been called
         bool verify() const;
 
+        // Tells you whether currently in a game.
+        // Returns the value as dictated in mInGame
+        bool in_game() const noexcept;
+
     private:
         // Invariant: verify() that returns true sets this to false
         // clicking a mine causes end of game

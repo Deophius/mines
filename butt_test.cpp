@@ -15,11 +15,11 @@ void print_game(const Holy::Butterfly& butt) {
 			else {
 				auto res = butt.read({ ix, iy });
 				if (!res)
-					std::cout << ' ';
+					std::cout << '.';
 				else if (*res) // res contains something because elif
 					std::cout << *res;
 				else
-					std::cout << '.';
+					std::cout << '0';
 			}
 			std::cout << ' ';
 		}
@@ -33,7 +33,7 @@ void init_game(Holy::Butterfly& butt, Holy::Point p) {
 	butt.start_game(p);
 }
 
-void main_loop(Holy::Butterfly& butt) {
+bool main_loop(Holy::Butterfly& butt) {
 	std::cout << "1) Start new game\n";
 	std::cout << "2) Click point\n";
 	std::cout << "3) Mark as flagged\n";
@@ -45,30 +45,36 @@ void main_loop(Holy::Butterfly& butt) {
 		switch (option) {
 		case 1:
 			init_game(butt, { x, y });
-			break;
+			return true;
 		case 2: {
 			auto res = butt.click({ x, y });
-			if (!res)
+			if (!res) {
 				std::cout << "Sorry, you lost!" << std::endl;
-			break;
+				return false;
+			}
+			return true;
 		}
 		case 3:
+			if (!butt.in_game())
+				throw std::logic_error("Not in game");
 			flagged[x][y] = true;
-			break;
+			return true;
 		default:
 			std::cout << "Unrecognized option, try again!" << std::endl;
+			return false;
 		}
 	} catch (const std::out_of_range& ex) {
 		std::cout << "The x, y you specified was out of range!\n";
 	} catch (const std::logic_error& ex) {
 		std::cout << "Please start a new game first!\n";
 	}
+	return false;
 }
 
 int main() {
 	Holy::Butterfly butt;
 	while (true) {
-		main_loop(butt);
-		print_game(butt);
+		if (main_loop(butt))
+			print_game(butt);
 	}
 }

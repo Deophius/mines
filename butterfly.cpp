@@ -37,6 +37,8 @@ namespace Holy {
 					mLabel[np.x][np.y]++;
 			});
 		}
+		// Do the first click
+		click(p);
 	}
 
 	std::optional<int> Butterfly::read(Point p) const {

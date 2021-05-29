@@ -11,9 +11,8 @@ namespace Holy {
 				iblock.second_init = true;
 				iblock.elabel = iblock.label;
 				iblock.vacant_nei = 0;
-				// FIXME: Not sure whether this will work
 				Point{ ix, iy }.for_each_nei8([&, this](Point np) {
-					auto& nblock = blocks[ix][iy];
+					auto& nblock = blocks[np.x][np.y];
 					if (nblock.status == Block::mine)
 						iblock.elabel--;
 					if (nblock.status == Block::unknown)
@@ -21,6 +20,25 @@ namespace Holy {
 				});
 			}
 		}
+	}
+
+	void GameData::recount(Point p) {
+		// Don't call this in recount() because of this if clause
+		if (!p.valid())
+			throw std::out_of_range("p is not valid!");
+		auto& block = blocks[p.x][p.y];
+		if (block.status != Block::number)
+			continue;
+		block.second_init = true;
+		block.elabel = block.label;
+		block.vacant_nei = 0;
+		p.for_each_nei8([&, this](Point np) {
+			auto& nblock = blocks[np.x][np.y];
+			if (nblock.status == Block::mine)
+				block.elabel--;
+			if (nblock.status == Block::unknown)
+				block.vacant_nei++;
+		});
 	}
 
 	void GameData::mark_semiknown(Point p) {

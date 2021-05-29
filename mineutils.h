@@ -90,9 +90,12 @@ namespace Holy {
             return blocks[p.x][p.y];
         }
 
-        // Initializes satellite data for those blocks that have not had them
-        // initialized but are capable of doing so
+        // (Re)initializes satellite data for number blocks
         void recount() noexcept;
+
+        // Initializes satellite data for a specific block
+        // throws out of range if p is not valid
+        void recount(Point p);
 
         // Marks a block as semiknown (number, but unknown label)
         // It decreases the neighbors' vacant_nei, but not elabel

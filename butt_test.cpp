@@ -1,5 +1,6 @@
 #include "butterfly.h"
 #include <iostream>
+#include "solvers.h"
 
 // Contains main()
 
@@ -33,20 +34,48 @@ void init_game(Holy::Butterfly& butt, Holy::Point p) {
 	butt.start_game(p);
 }
 
+bool invoke_roundup(Holy::Butterfly& butt) {
+	using namespace Holy;
+	GameData game;
+	for (int ix = 1; ix <= col; ix++) {
+		for (int iy = 1; iy <= row; iy++) {
+			if (flagged[ix][iy])
+				game[{ ix, iy }].status = Block::mine;
+			else if (auto read = butt.read({ ix, iy }); read) {
+				game[{ ix, iy }].status = Block::number;
+				game[{ ix, iy }].label = *read;
+			}
+		}
+	}
+	game.recount();
+	bool ret = roundup(game, butt);
+	for (int ix = 1; ix <= col; ix++) {
+		for (int iy = 1; iy <= row; iy++) {
+			if (game[{ ix, iy }].status == Block::mine)
+				flagged[ix][iy] = true;
+		}
+	}
+	return ret;
+}
+
 bool main_loop(Holy::Butterfly& butt) {
 	std::cout << "1) Start new game\n";
 	std::cout << "2) Click point\n";
 	std::cout << "3) Mark as flagged\n";
+	std::cout << "4) Call roundup once\n";
+	std::cout << "5) Call roundup recursively\n";
 	std::cout << "Your choice? (Three ints please)";
 	// operands
 	int option, x = 0, y = 0;
-	std::cin >> option >> x >> y;
+	std::cin >> option;
 	try {
 		switch (option) {
 		case 1:
+			std::cin >> x >> y;
 			init_game(butt, { x, y });
 			return true;
 		case 2: {
+			std::cin >> x >> y;
 			auto res = butt.click({ x, y });
 			if (!res) {
 				std::cout << "Sorry, you lost!" << std::endl;
@@ -55,9 +84,21 @@ bool main_loop(Holy::Butterfly& butt) {
 			return true;
 		}
 		case 3:
+			std::cin >> x >> y;
 			if (!butt.in_game())
 				throw std::logic_error("Not in game");
 			flagged[x][y] = true;
+			return true;
+		case 4:
+			if (!butt.in_game())
+				throw std::logic_error("Not in game");
+			std::cout << "Roundup returned " << invoke_roundup(butt) << '\n';
+			return true;
+		case 5:
+			if (!butt.in_game())
+				throw std::logic_error("Not in game");
+			while (invoke_roundup(butt))
+				;
 			return true;
 		default:
 			std::cout << "Unrecognized option, try again!" << std::endl;
@@ -73,6 +114,7 @@ bool main_loop(Holy::Butterfly& butt) {
 
 int main() {
 	Holy::Butterfly butt;
+	std::cout << std::boolalpha;
 	while (true) {
 		if (main_loop(butt))
 			print_game(butt);

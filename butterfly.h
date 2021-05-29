@@ -36,7 +36,8 @@ namespace Holy {
         bool verify() const;
 
     private:
-        // Invariant: only verify() that returns true sets this to false
+        // Invariant: verify() that returns true sets this to false
+        // clicking a mine causes end of game
         // only start_game() sets this to true
         // click, verify, read should function only if this is true
         bool mInGame = false;

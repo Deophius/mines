@@ -7,9 +7,9 @@ include_directories(${PROJECT_SOURCE_DIR})
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(mines STATIC butterfly mineutils)
+add_library(mines STATIC butterfly.cpp mineutils.cpp roundup.cpp)
 
-add_executable(mnu_test mnu_test)
+add_executable(mnu_test mnu_test.cpp)
 target_link_libraries(mnu_test mines)
-add_executable(butt_test butt_test)
+add_executable(butt_test butt_test.cpp)
 target_link_libraries(butt_test mines)

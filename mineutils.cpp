@@ -28,7 +28,7 @@ namespace Holy {
 			throw std::out_of_range("p is not valid!");
 		auto& block = blocks[p.x][p.y];
 		if (block.status != Block::number)
-			continue;
+			return;
 		block.second_init = true;
 		block.elabel = block.label;
 		block.vacant_nei = 0;

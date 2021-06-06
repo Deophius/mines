@@ -46,5 +46,6 @@ namespace Holy {
                 ret = do_work(game, butt, { ix, iy }) || ret;
             }
         }
+        return ret;
     }
 }

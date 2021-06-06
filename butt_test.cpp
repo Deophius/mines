@@ -1,5 +1,6 @@
 #include "butterfly.h"
 #include <iostream>
+#include <chrono>
 #include "solvers.h"
 
 // Contains main()
@@ -97,8 +98,15 @@ bool main_loop(Holy::Butterfly& butt) {
 		case 5:
 			if (!butt.in_game())
 				throw std::logic_error("Not in game");
-			while (invoke_roundup(butt))
-				;
+			{
+				using namespace std::chrono;
+				auto start = high_resolution_clock::now();
+				while (invoke_roundup(butt))
+					;
+				auto end = high_resolution_clock::now();
+				std::cout << duration_cast<microseconds>(end - start).count()
+					<< "us" << std::endl;
+			}
 			return true;
 		default:
 			std::cout << "Unrecognized option, try again!" << std::endl;
@@ -118,5 +126,7 @@ int main() {
 	while (true) {
 		if (main_loop(butt))
 			print_game(butt);
+		if (std::cin.eof())
+			break;
 	}
 }

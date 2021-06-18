@@ -1,5 +1,7 @@
 #include "butterfly.h"
 #include <algorithm>
+#include <chrono>
+#include <random>
 #include <vector>
 #include <queue>
 
@@ -24,7 +26,9 @@ namespace Holy {
 					possible.push_back({ ix, iy });
 			}
 		}
-		std::random_shuffle(possible.begin(), possible.end());
+		using std::chrono::system_clock;
+		std::mt19937 gen(system_clock::now().time_since_epoch().count());
+		std::shuffle(std::begin(possible), std::end(possible), gen);
 		for (int i = 1; i <= mines; i++) {
 			Point& p = possible[i];
 			mMined[p.x][p.y] = true;

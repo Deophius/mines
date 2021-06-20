@@ -22,12 +22,17 @@ namespace Holy {
             return x + y * col;
         }
 
+        // Grab default comparisons for Point
+        friend auto operator<=>(const Point& lhs, const Point& rhs) = default;
+
         // Carry out an operation for the valid of 8 neighbors of p
         // fn(Point) should be a valid invocation
         template <typename Fn>
-        void for_each_nei8(Fn&& fn) {
+        void for_each_nei8(Fn&& fn) const {
             // template functions must be defined in header
-            static_assert(std::is_invocable_v<Fn, Point>, "Should meet type req!");
+            static_assert(
+                std::is_invocable_v<Fn, Point>,
+                "Should meet type req!");
             constexpr int dx[] = { -1, 0, 1, -1, 1, -1, 0, 1 };
             constexpr int dy[] = { -1, -1, -1, 0, 0, 1, 1, 1 };
             for (int i = 0; i < 8; i++) {
@@ -40,8 +45,10 @@ namespace Holy {
         // Carry out an operation for the valid of 4 neighbors of p
         // fn should meet same type requirements
         template <typename Fn>
-        void for_each_nei4(Fn&& fn) {
-            static_assert(std::is_invocable_v<Fn, Point>, "Should meet type req!");
+        void for_each_nei4(Fn&& fn) const {
+            static_assert(
+                std::is_invocable_v<Fn, Point>,
+                "Should meet type req!");
             constexpr int dx[] = { 0, 0, 1, -1 };
             constexpr int dy[] = { 1, -1, 0, 0 };
             for (int i = 0; i < 4; i++) {
@@ -58,15 +65,13 @@ namespace Holy {
         // status of block
         // semiknown is a state where you know a block contains a number,
         // but do not know what the number is exactly.
-        enum Status {
-            unknown, mine, number, semiknown
-        };
+        enum Status { unknown, mine, number, semiknown };
         Status status = unknown;
         // label read from mock-server (0 if status != number)
         int label = 0;
         // tags whether second hand data is initialized
-        // FIXME: Perhaps put second_init into private and befriend GameData::recount() -- difficult
-        // Or put this info into GameData
+        // FIXME: Perhaps put second_init into private and befriend
+        // GameData::recount() -- difficult Or put this info into GameData
         bool second_init = false;
         // effective label (0 if status != number)
         int elabel = 0;
@@ -82,11 +87,11 @@ namespace Holy {
         // A shorthand for accessing a given Block
         // Does not check for out_of_bound errors, to make noexcept promise
         // According to language standard, only one argument
-        inline Block& operator[] (Point p) noexcept {
+        inline Block& operator[](Point p) noexcept {
             return blocks[p.x][p.y];
         }
 
-        inline const Block& operator[] (Point p) const noexcept {
+        inline const Block& operator[](Point p) const noexcept {
             return blocks[p.x][p.y];
         }
 
@@ -109,6 +114,6 @@ namespace Holy {
         // otherwise raises std::runtime_error
         void mark_mine(Point p);
     };
-}
+} // namespace Holy
 
 #endif

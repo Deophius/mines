@@ -36,7 +36,7 @@ namespace Holy {
             }
             return false;
         }
-    }
+    } // namespace
 
     bool roundup(GameData& game, Butterfly& butt) {
         bool ret = false;
@@ -48,4 +48,4 @@ namespace Holy {
         }
         return ret;
     }
-}
+} // namespace Holy

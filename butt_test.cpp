@@ -113,12 +113,18 @@ bool main_loop(Holy::Butterfly& butt) {
                         << "us" << std::endl;
                 }
                 return true;
-            case 6:
+            case 6: {
                 if (!butt.in_game())
                     throw std::logic_error("Not in game!");
+                using namespace std::chrono;
+                auto start = high_resolution_clock::now();
                 std::cout << "Felix returned "
                           << invoke_func(butt, &Holy::felix) << '\n';
+                auto end = high_resolution_clock::now();
+                std::cout << duration_cast<microseconds>(end - start).count()
+                          << "us" << std::endl;
                 return true;
+            }
             default:
                 std::cout << "Unrecognized option, try again!" << std::endl;
                 return false;

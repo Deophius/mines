@@ -21,12 +21,9 @@ void nei4() {
     std::cout << "\tEnter nei4 testcase..." << std::endl;
     using namespace Holy;
     GameData a;
-    Point{ 1, 1 }.for_each_nei4([&](Point np) { a[np].label = 4; });
     Point{ 10, 10 }.for_each_nei8([&](Point np) { a[np].label = 7; });
     CHECK(a[{ 9, 9 }].label == 7, "9 9");
     CHECK(a[{ 10, 10 }].label == 0, "10 10");
-    CHECK(a[{ 1, 2 }].label == 4, "1 2");
-    CHECK(a[{ 2, 2 }].label == 0, "2 2");
 }
 
 int main() {

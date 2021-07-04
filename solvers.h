@@ -5,6 +5,9 @@
 
 // Because now reading and solving costs nothing, we can directly
 // transfer data to and from the butterfly immediately
+/// @file solvers.h Solvers' declarations
+/// @attention All solvers expect that the GameData structure is up to date
+/// and will ensure it is still up to date when the solver exits.
 
 namespace Holy {
     /// @brief Deterministic solver
@@ -34,6 +37,22 @@ namespace Holy {
     /// @exception This function only transmits exceptions.
     /// @warning Terminates when an unexpected bad move is taken.
     bool felix(GameData& game, Butterfly& butt);
+
+    /// @brief Helper to transfer data from butterfly
+    ///
+    /// After the solver has made up its about mind which blocks to probe, it
+    /// will call mark_semiknown() and mark_mine(), which maintains the satellite
+    /// data for blocks already probed. This function's job is to get data from
+    /// butterfly, making sure the newly appeared blocks' recount() called, and
+    /// new continents are handled correctly.
+    /// @param game -- the game data with semiknown blocks
+    /// @param butt -- the butterfly
+    /// @param det -- whether the caller is determinisic
+    /// @returns true if not lost, false if lost (det == false)
+    /// @returns true (det == true)
+    /// @exception This function only transmits exceptions.
+    /// @warning Contains asserts that cause program to crash.
+    bool accio(GameData& game, Butterfly& butt, bool det);
 } // namespace Holy
 
 #endif

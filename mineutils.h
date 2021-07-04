@@ -41,22 +41,6 @@ namespace Holy {
                     fn(np);
             }
         }
-
-        // Carry out an operation for the valid of 4 neighbors of p
-        // fn should meet same type requirements
-        template <typename Fn>
-        void for_each_nei4(Fn&& fn) const {
-            static_assert(
-                std::is_invocable_v<Fn, Point>,
-                "Should meet type req!");
-            constexpr int dx[] = { 0, 0, 1, -1 };
-            constexpr int dy[] = { 1, -1, 0, 0 };
-            for (int i = 0; i < 4; i++) {
-                Point np{ x + dx[i], y + dy[i] };
-                if (np.valid())
-                    fn(np);
-            }
-        }
     };
 
     // Data structure of a block

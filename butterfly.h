@@ -24,15 +24,17 @@ namespace Holy {
         std::optional<int> read(Point p) const;
 
         // "Left clicks" at the given point, note there is right click
-        // counterpart If start_game has not been called for this game, throws
-        // std::logic_error If this click probes a mine, returns nullopt If
-        // probes a number, returns the label, which may be 0
+        // counterpart.
+        // If start_game has not been called for this game, throws
+        // std::logic_error.
+        // If this click probes a mine, returns nullopt
+        // If probes a number, returns the label, which may be 0
         std::optional<int> click(Point p);
 
         // Verifies that you have won the game
         // Returns true only if you have probed all blocks with a label of
-        // [0,8], which consequently leaves blocks with mine empty Otherwise,
-        // returns false Throws std::logic_error if start_game has not been
+        // [0,8], which consequently leaves blocks with mine empty
+        // Otherwise, returns false Throws std::logic_error if start_game has not been
         // called
         bool verify() const;
 

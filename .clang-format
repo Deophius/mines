@@ -74,14 +74,14 @@ NamespaceIndentation: All
 # ObjCSpaceBeforeProtocolList:
 PenaltyBreakAssignment: 10000
 PenaltyBreakBeforeFirstCallParameter: 0
-PenaltyBreakComment: 100
+PenaltyBreakComment: 10000
 PenaltyBreakFirstLessLess: 0
 PenaltyBreakString: 100
 PenaltyBreakTemplateDeclaration: 0
-PenaltyExcessCharacter: 100
+PenaltyExcessCharacter: 30
 PenaltyReturnTypeOnItsOwnLine: 10
 PointerAlignment: Left
-ReflowComments: true
+ReflowComments: false
 SortIncludes: true
 SortUsingDeclarations: true
 SpaceAfterCStyleCast: false

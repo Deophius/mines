@@ -4,10 +4,8 @@
 
 namespace {
     // Gets share_cnt map
-    std::map<Holy::Point, int> get_share_cnt(
-        Holy::GameData& game,
-        Holy::Butterfly& butt,
-        Holy::Point p) {
+    std::map<Holy::Point, int>
+        get_share_cnt(Holy::GameData& game, Holy::Butterfly& butt, Holy::Point p) {
         using namespace Holy;
         // FIXME: Can we make map more effective by static thread_local?
         // FIXME: Or can we switch to a bitset of 480 bits?
@@ -31,7 +29,11 @@ namespace {
 
     // This helper clicks the appropriate blocks after a deduction
     // has been made.
-    void click_blocks(Holy::GameData& game, Holy::Butterfly& butt, Holy::Point p, Holy::Point nei2) {
+    void click_blocks(
+        Holy::GameData& game,
+        Holy::Butterfly& butt,
+        Holy::Point p,
+        Holy::Point nei2) {
         using namespace Holy;
         // Those kept back are all mines, unused neighbors of center num
         // 1 if kept back, 2 if unused nei of center, 3 if both

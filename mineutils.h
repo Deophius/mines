@@ -55,7 +55,8 @@ namespace Holy {
         int label = 0;
         // tags whether second hand data is initialized
         // FIXME: Perhaps put second_init into private and befriend
-        // GameData::recount() -- difficult Or put this info into GameData
+        // GameData::recount() -- difficult
+        // Or put this info into GameData
         bool second_init = false;
         // effective label (0 if status != number)
         int elabel = 0;

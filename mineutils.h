@@ -69,6 +69,9 @@ namespace Holy {
         // Array of the blocks
         std::array<std::array<Block, row + 1>, col + 1> blocks;
 
+        // Mines left
+        int mines_left = mines;
+
         // A shorthand for accessing a given Block
         // Does not check for out_of_bound errors, to make noexcept promise
         // According to language standard, only one argument

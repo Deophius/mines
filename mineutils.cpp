@@ -69,5 +69,7 @@ namespace Holy {
                 (*this)[np].elabel--;
             }
         });
+        // Decrease the number of mines left
+        mines_left--;
     }
 } // namespace Holy

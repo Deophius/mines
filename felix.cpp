@@ -5,7 +5,7 @@
 namespace {
     // Gets share_cnt map
     std::map<Holy::Point, int>
-        get_share_cnt(Holy::GameData& game, Holy::Butterfly& butt, Holy::Point p) {
+        get_share_cnt(Holy::GameData& game, Holy::Point p) {
         using namespace Holy;
         // FIXME: Can we make map more effective by static thread_local?
         // FIXME: Or can we switch to a bitset of 480 bits?
@@ -31,7 +31,6 @@ namespace {
     // has been made.
     void click_blocks(
         Holy::GameData& game,
-        Holy::Butterfly& butt,
         Holy::Point p,
         Holy::Point nei2) {
         using namespace Holy;
@@ -51,27 +50,18 @@ namespace {
                 game.mark_mine(nei);
             if (role == 2) {
                 game.mark_semiknown(nei);
-                auto read = butt.click(nei);
-                assert(read);
-                game[nei].label = *read;
-                game[nei].status = Block::number;
             }
-        }
-        // Recount them together to save time
-        for (const auto& [nei, role] : roles) {
-            if (role == 2)
-                game.recount(nei);
         }
     }
 
     // This function does the work.
     // Returns true if a modification is made
-    bool worker(Holy::GameData& game, Holy::Butterfly& butt, Holy::Point p) {
+    bool worker(Holy::GameData& game, Holy::Point p) {
         using namespace Holy;
         // p is the center with effective_label 1
         assert(game[p].elabel == 1);
         assert(game[p].status == Block::number);
-        auto share_cnt = get_share_cnt(game, butt, p);
+        auto share_cnt = get_share_cnt(game, p);
         for (auto [nei2, shared] : share_cnt) {
             // According to strategy, kept_back +1 == elabel is deducible
             const int kept = game[nei2].vacant_nei - shared;
@@ -81,7 +71,7 @@ namespace {
             // There's no real use doing extra work
             if (kept == 0 && shared == game[p].vacant_nei)
                 continue;
-            click_blocks(game, butt, p, nei2);
+            click_blocks(game, p, nei2);
             // Each center only serves one second-neighbor.
             return true;
         }
@@ -90,13 +80,13 @@ namespace {
 } // namespace
 
 namespace Holy {
-    bool felix(GameData& game, Butterfly& butt) {
+    bool felix(GameData& game) {
         bool ret = false;
         for (int ix = 1; ix <= col; ix++) {
             for (int iy = 1; iy <= row; iy++) {
                 Point p = { ix, iy };
                 if (game[p].status == Block::number && game[p].elabel == 1)
-                    ret = worker(game, butt, p) || ret;
+                    ret = worker(game, p) || ret;
             }
         }
         return ret;

@@ -35,39 +35,10 @@ void init_game(Holy::Butterfly& butt, Holy::Point p) {
     butt.start_game(p);
 }
 
-bool invoke_func(
-    Holy::Butterfly& butt,
-    bool (*func)(Holy::GameData&, Holy::Butterfly&)) {
-    using namespace Holy;
-    GameData game;
-    for (int ix = 1; ix <= col; ix++) {
-        for (int iy = 1; iy <= row; iy++) {
-            if (flagged[ix][iy])
-                game[{ ix, iy }].status = Block::mine;
-            else if (auto read = butt.read({ ix, iy }); read) {
-                game[{ ix, iy }].status = Block::number;
-                game[{ ix, iy }].label = *read;
-            }
-        }
-    }
-    game.recount();
-    bool ret = (*func)(game, butt);
-    for (int ix = 1; ix <= col; ix++) {
-        for (int iy = 1; iy <= row; iy++) {
-            if (game[{ ix, iy }].status == Block::mine)
-                flagged[ix][iy] = true;
-        }
-    }
-    return ret;
-}
-
 bool main_loop(Holy::Butterfly& butt) {
     std::cout << "1) Start new game\n";
     std::cout << "2) Click point\n";
     std::cout << "3) Mark as flagged\n";
-    std::cout << "4) Call roundup once\n";
-    std::cout << "5) Call roundup recursively\n";
-    std::cout << "6) Call felix once\n";
     std::cout << "Your choice? (Three ints please)";
     // operands
     int option, x = 0, y = 0;
@@ -93,38 +64,6 @@ bool main_loop(Holy::Butterfly& butt) {
                     throw std::logic_error("Not in game");
                 flagged[x][y] = true;
                 return true;
-            case 4:
-                if (!butt.in_game())
-                    throw std::logic_error("Not in game");
-                std::cout << "Roundup returned "
-                          << invoke_func(butt, &Holy::roundup) << '\n';
-                return true;
-            case 5:
-                if (!butt.in_game())
-                    throw std::logic_error("Not in game");
-                {
-                    using namespace std::chrono;
-                    auto start = high_resolution_clock::now();
-                    while (invoke_func(butt, &Holy::roundup))
-                        ;
-                    auto end = high_resolution_clock::now();
-                    std::cout
-                        << duration_cast<microseconds>(end - start).count()
-                        << "us" << std::endl;
-                }
-                return true;
-            case 6: {
-                if (!butt.in_game())
-                    throw std::logic_error("Not in game!");
-                using namespace std::chrono;
-                auto start = high_resolution_clock::now();
-                std::cout << "Felix returned "
-                          << invoke_func(butt, &Holy::felix) << '\n';
-                auto end = high_resolution_clock::now();
-                std::cout << duration_cast<microseconds>(end - start).count()
-                          << "us" << std::endl;
-                return true;
-            }
             default:
                 std::cout << "Unrecognized option, try again!" << std::endl;
                 return false;

@@ -17,13 +17,12 @@ namespace Holy {
     /// This can be called several times to squeeze the easiest case
     /// out of the board.
     /// @param game -- the game_data structure
-    /// @param butt -- the corresponding butterfly
     /// @returns true if this call made a difference,
     /// @returns false otherwise
     /// @exception This function does not throw exceptions on its own behalf,
     /// but lower-level exceptions can be transmitted up.
     /// @warning Terminates when a design error happens
-    bool roundup(GameData& game, Butterfly& butt);
+    bool roundup(GameData& game);
 
     /// @brief Deterministic solver
     ///
@@ -31,12 +30,11 @@ namespace Holy {
     /// commonly used in human gameplay: deduction by using a subset of the
     /// vacant blocks of the center
     /// @param game -- the game data structure
-    /// @param butt -- the butterfly used
     /// @returns true if this call made a difference,
     /// @returns false otherwise.
     /// @exception This function only transmits exceptions.
     /// @warning Terminates when an unexpected bad move is taken.
-    bool felix(GameData& game, Butterfly& butt);
+    bool felix(GameData& game);
 
     /// @brief Helper to transfer data from butterfly
     ///

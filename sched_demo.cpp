@@ -49,11 +49,11 @@ void main_loop(Butterfly& butt) {
     do {
         // std::cerr << "Has hope\n";
         has_hope = false;
-        while (++roundup_cnt && roundup(game, butt)) {
+        while (++roundup_cnt && roundup(game)) {
             has_hope = true;
             accio(game, butt, true);
         }
-        while (++felix_cnt && felix(game, butt)) {
+        while (++felix_cnt && felix(game)) {
             has_hope = true;
             accio(game, butt, true);
         }

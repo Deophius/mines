@@ -22,9 +22,6 @@ namespace Holy {
             return x + y * col;
         }
 
-        // Grab default comparisons for Point
-        friend auto operator<=>(const Point& lhs, const Point& rhs) = default;
-
         // Carry out an operation for the valid of 8 neighbors of p
         // fn(Point) should be a valid invocation
         template <typename Fn>
@@ -42,6 +39,52 @@ namespace Holy {
             }
         }
     };
+
+    /// @brief Compares two Point structures
+    /// Strong ordering, first compares x then y
+    /// @returns -1 if lhs < rhs
+    /// @returns 0 if lhs == rhs
+    /// @returns 1 if lhs > rhs
+    /// @exception None
+    /// @param lhs, rhs -- the operands
+    inline int compare(const Point& lhs, const Point& rhs) noexcept {
+        if (lhs.x == rhs.x) {
+            if (lhs.y < rhs.y)
+                return -1;
+            else if (lhs.y == rhs.y)
+                return 0;
+            else
+                return 1;
+        } else if (lhs.x < rhs.x)
+            return -1;
+        else
+            return 1;
+    }
+
+    // Operators for comparison
+    inline bool operator < (const Point& lhs, const Point& rhs) noexcept {
+        return compare(lhs, rhs) < 0;
+    }
+
+    inline bool operator <= (const Point& lhs, const Point& rhs) noexcept {
+        return compare(lhs, rhs) <= 0;
+    }
+
+    inline bool operator == (const Point& lhs, const Point& rhs) noexcept {
+        return compare(lhs, rhs) == 0;
+    }
+    
+    inline bool operator > (const Point& lhs, const Point& rhs) noexcept {
+        return compare(lhs, rhs) > 0;
+    }
+
+    inline bool operator >= (const Point& lhs, const Point& rhs) noexcept {
+        return compare(lhs, rhs) >= 0;
+    }
+
+    inline bool operator != (const Point& lhs, const Point& rhs) noexcept {
+        return compare(lhs, rhs) != 0;
+    }
 
     // Data structure of a block
     // This struct stores the basic data of a block

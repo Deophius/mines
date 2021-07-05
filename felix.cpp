@@ -18,7 +18,7 @@ namespace {
                     return;
                 if (game[nei2].status != Block::number)
                     return;
-                if (share_cnt.contains(nei2))
+                if (share_cnt.find(nei2) != share_cnt.end())
                     share_cnt[nei2]++;
                 else
                     share_cnt[nei2] = 1;

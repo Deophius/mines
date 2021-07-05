@@ -73,7 +73,7 @@ namespace Holy {
     inline bool operator == (const Point& lhs, const Point& rhs) noexcept {
         return compare(lhs, rhs) == 0;
     }
-    
+
     inline bool operator > (const Point& lhs, const Point& rhs) noexcept {
         return compare(lhs, rhs) > 0;
     }
@@ -144,6 +144,12 @@ namespace Holy {
         // Assumes that p is an unprobed block and not out of bound,
         // otherwise raises std::runtime_error
         void mark_mine(Point p);
+
+        // Does the reverse of mark_semiknown
+        void unmark_semiknown(Point p);
+
+        // Reverse of mark_mine
+        void unmark_mine(Point p);
     };
 } // namespace Holy
 

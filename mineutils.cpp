@@ -72,4 +72,32 @@ namespace Holy {
         // Decrease the number of mines left
         mines_left--;
     }
+
+    void GameData::unmark_mine(Point p) {
+        if (!p.valid())
+            throw std::runtime_error("p is not valid!");
+        if ((*this)[p].status != Block::mine)
+            throw std::runtime_error("Attempting to unmark a non-mine block");
+        (*this)[p].status = Block::unknown;
+        p.for_each_nei8([this](Point np) {
+            if ((*this)[np].second_init) {
+                (*this)[np].vacant_nei++;
+                (*this)[np].elabel++;
+            }
+        });
+        mines_left++;
+    }
+
+    void GameData::unmark_semiknown(Point p) {
+        if (!p.valid())
+            throw std::runtime_error("p is not valid!");
+        if ((*this)[p].status != Block::semiknown)
+            throw std::runtime_error("The block about to be unmarked is not marked");
+        (*this)[p].status = Block::unknown;
+        p.for_each_nei8([this](Point np) {
+            Block& nb = (*this)[np];
+            if (nb.second_init)
+                nb.vacant_nei++;
+        });
+    }
 } // namespace Holy

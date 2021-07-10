@@ -68,6 +68,7 @@ void main_loop(Butterfly& butt) {
     std::cout << duration_cast<microseconds>(end - start).count() << "us"
               << std::endl;
     std::cout << "Whether butterfly says we win: " << butt.verify() << std::endl;
+    john(game);
 }
 
 int main() {

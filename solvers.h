@@ -2,6 +2,7 @@
 #define SOLVERS_H
 
 #include "butterfly.h"
+#include <vector>
 
 // Because now reading and solving costs nothing, we can directly
 // transfer data to and from the butterfly immediately
@@ -10,8 +11,11 @@
 /// and will ensure it is still up to date when the solver exits.
 
 namespace Holy {
-    /// @brief Deterministic solver
+    /// @brief A list of blocks that are the frontier
+    /// FIXME: roundup and felix should have frontier versions as well
+    using Frontier = std::vector<Point>;
 
+    /// @brief Deterministic solver
     /// For all blocks with neighbors either all empty or all mined,
     /// probe them and returns.
     /// This can be called several times to squeeze the easiest case
@@ -51,6 +55,22 @@ namespace Holy {
     /// @exception This function only transmits exceptions.
     /// @warning Contains asserts that cause program to crash.
     bool accio(GameData& game, Butterfly& butt, bool det);
+
+    /// @brief The type used to denote probability map
+    /// @warning It's total abuse if long long cannot hold the info
+    using MineChance = std::array<long long, col * row + 5>;
+
+    /// @brief Violently BFS and makes move depending on that, deterministic
+    ///
+    /// This should be the last struggle made against a difficult game,
+    /// then resort to tactical guessing.
+    /// @param game -- the game data
+    /// @returns nullopt if found a deterministic move
+    /// @return A map of Point -> int, showing how many cases in which a certain
+    /// point contains a mine
+    /// @exception This function only transmits exceptions.
+    /// @warning Might call terminate
+    std::optional<MineChance> john(GameData& game);
 } // namespace Holy
 
 #endif

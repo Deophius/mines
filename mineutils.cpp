@@ -45,7 +45,7 @@ namespace Holy {
         if (!p.valid())
             throw std::runtime_error("p is not valid!");
         if ((*this)[p].status != Block::unknown)
-            throw std::runtime_error("p does not refer to an unprobed block!");
+            throw std::runtime_error("mark_semiknown: p does not refer to an unprobed block!");
         // Mark point p
         (*this)[p].status = Block::semiknown;
         // mark neighbors, to keep invariant, only take action if second_init is
@@ -60,7 +60,7 @@ namespace Holy {
         if (!p.valid())
             throw std::runtime_error("p is not valid!");
         if ((*this)[p].status != Block::unknown)
-            throw std::runtime_error("p does not refer to an unprobed block!");
+            throw std::runtime_error("mark_mine: p does not refer to an unprobed block!");
         // Mark point p
         (*this)[p].status = Block::mine;
         p.for_each_nei8([this](Point np) {

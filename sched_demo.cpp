@@ -3,14 +3,15 @@
 #include "solvers.h"
 #include <chrono>
 #include <iostream>
+#include <iomanip>
 
 using namespace Holy;
 
-void print(GameData& game) {
+void print(const GameData& game) {
     for (int iy = 1; iy <= row; iy++) {
         for (int ix = 1; ix <= col; ix++) {
             Point p{ ix, iy };
-            Block& b = game[p];
+            const Block& b = game[p];
             switch (b.status) {
                 case Block::unknown:
                     std::cout << ' ';
@@ -30,6 +31,19 @@ void print(GameData& game) {
         std::cout << '\n';
     }
     std::cout.flush();
+}
+
+void print(const MineChance& mc) {
+    for (int iy = 1; iy <= row; iy++) {
+        for (int ix = 1; ix <= col; ix++) {
+            int hash = Point{ix, iy}.hash();
+            if (mc[hash])
+                std::cout << std::setw(2) << mc[hash] << ' ';
+            else
+                std::cout << "   ";
+        }
+        std::cout << '\n';
+    }
 }
 
 void main_loop(Butterfly& butt) {
@@ -82,6 +96,11 @@ void main_loop(Butterfly& butt) {
     std::cout << duration_cast<microseconds>(end - start).count() << "us"
               << std::endl;
     std::cout << "Whether butterfly says we win: " << butt.verify() << std::endl;
+    if (mc && !butt.verify()) {
+        print(*mc);
+    } else if (!mc) {
+        print(game);
+    }
 }
 
 int main() {

@@ -5,6 +5,9 @@
 namespace {
     using namespace Holy;
 
+    // Dummy class to indicate that we should stop iteration
+    struct StopIteration {};
+
     // Finds the frontier where the search takes place
     // Output written to front
     // No need to communicate with butterfly here
@@ -66,8 +69,8 @@ namespace {
         if (k == front.size()) {
             // Reached end of recursion, success
             ans.push_back(game);
-            if (ans.size() >= 10000)
-                throw std::runtime_error("Too much recursion!");
+            if (ans.size() >= 100000)
+                throw StopIteration();
             return;
         }
         Point p = front[k];
@@ -108,7 +111,11 @@ namespace Holy {
         std::vector<GameData> ans;
         Frontier front;
         find_front(game, front);
-        dfs(game, front, 0, ans);
+        try {
+            dfs(game, front, 0, ans);
+        } catch (const StopIteration&) {
+            // FIXME: Is it correct to just carry on and ignore this?
+        }
         assert(ans.size());
         // The result of this call
         MineChance mc;

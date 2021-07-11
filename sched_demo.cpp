@@ -68,7 +68,20 @@ void main_loop(Butterfly& butt) {
     std::cout << duration_cast<microseconds>(end - start).count() << "us"
               << std::endl;
     std::cout << "Whether butterfly says we win: " << butt.verify() << std::endl;
-    john(game);
+    if (butt.verify())
+        return;
+    std::cout << "Invoking john" << std::endl;
+    start = high_resolution_clock::now();
+    auto mc = john(game);
+    if (!mc)
+        // Deterministic
+        accio(game, butt, true);
+    end = high_resolution_clock::now();
+    std::cout << "Whether john was deterministic: " << (!mc) << '\n';
+    std::cout << "Time consumed: ";
+    std::cout << duration_cast<microseconds>(end - start).count() << "us"
+              << std::endl;
+    std::cout << "Whether butterfly says we win: " << butt.verify() << std::endl;
 }
 
 int main() {

@@ -1,10 +1,9 @@
 #include "solvers.h"
 #include <bitset>
-#include <iostream>
+#include <cassert>
 
 namespace {
     using namespace Holy;
-    using Checklist = std::bitset<col * row + 5>;
 
     // Finds the frontier where the search takes place
     // Output written to front
@@ -63,7 +62,6 @@ namespace {
         if (k == front.size()) {
             // Reached end of recursion, success
             ans.push_back(game);
-            std::cerr << "Reached end\n";
             if (ans.size() >= 10000)
                 throw std::runtime_error("Too much recursion!");
             return;
@@ -79,7 +77,6 @@ namespace {
         {
             // copy it down because I'm having trouble restoring it
             GameData game2 = game;
-            // std::cerr << "Marking " << k << " as mine\n";
             game2.mark_mine(p);
             do {
                 while (roundup(game2))
@@ -91,7 +88,6 @@ namespace {
         // Second guess: not a mine
         {
             GameData game2 = game;
-            // std::cerr << "trying mark_semiknown\n";
             game2.mark_semiknown(p);
             do {
                 while (roundup(game2))
@@ -109,7 +105,29 @@ namespace Holy {
         Frontier front;
         find_front(game, front);
         dfs(game, front, 0, ans);
-        // std::cout << "Found " << ans.size() << " answers in john\n";
-        return std::nullopt;
+        assert(ans.size());
+        // The result of this call
+        MineChance mc;
+        for (const auto& solution : ans) {
+            for (const auto& p : front) {
+                if (solution[p].status == Block::mine)
+                    mc[p.hash()]++;
+            }
+        }
+        bool det = false;
+        // Check for deterministic behaviours
+        for (const auto& p : front) {
+            const int chance = mc[p.hash()];
+            if (chance == ans.size()) {
+                game.mark_mine(p);
+                det = true;
+            } else if (chance == 0) {
+                game.mark_semiknown(p);
+                det = true;
+            }
+        }
+        if (det)
+            return std::nullopt;
+        return mc;
     }
 }

@@ -63,27 +63,27 @@ namespace Holy {
     }
 
     // Operators for comparison
-    inline bool operator < (const Point& lhs, const Point& rhs) noexcept {
+    inline bool operator<(const Point& lhs, const Point& rhs) noexcept {
         return compare(lhs, rhs) < 0;
     }
 
-    inline bool operator <= (const Point& lhs, const Point& rhs) noexcept {
+    inline bool operator<=(const Point& lhs, const Point& rhs) noexcept {
         return compare(lhs, rhs) <= 0;
     }
 
-    inline bool operator == (const Point& lhs, const Point& rhs) noexcept {
+    inline bool operator==(const Point& lhs, const Point& rhs) noexcept {
         return compare(lhs, rhs) == 0;
     }
 
-    inline bool operator > (const Point& lhs, const Point& rhs) noexcept {
+    inline bool operator>(const Point& lhs, const Point& rhs) noexcept {
         return compare(lhs, rhs) > 0;
     }
 
-    inline bool operator >= (const Point& lhs, const Point& rhs) noexcept {
+    inline bool operator>=(const Point& lhs, const Point& rhs) noexcept {
         return compare(lhs, rhs) >= 0;
     }
 
-    inline bool operator != (const Point& lhs, const Point& rhs) noexcept {
+    inline bool operator!=(const Point& lhs, const Point& rhs) noexcept {
         return compare(lhs, rhs) != 0;
     }
 

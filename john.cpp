@@ -58,7 +58,11 @@ namespace {
     // We're at the kth element of frontier.
     // If we find a reasonable solution, append it to ans.
     // FIXME: Pay attention to move semantics after first dev
-    void dfs(const GameData& game, const Frontier& front, int k, std::vector<GameData>& ans) {
+    void
+        dfs(const GameData& game,
+            const Frontier& front,
+            int k,
+            std::vector<GameData>& ans) {
         if (k == front.size()) {
             // Reached end of recursion, success
             ans.push_back(game);
@@ -97,7 +101,7 @@ namespace {
                 dfs(game2, front, k + 1, ans);
         }
     }
-}
+} // namespace
 
 namespace Holy {
     std::optional<MineChance> john(GameData& game) {
@@ -131,4 +135,4 @@ namespace Holy {
             return std::nullopt;
         return mc;
     }
-}
+} // namespace Holy

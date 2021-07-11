@@ -107,7 +107,7 @@ namespace {
 } // namespace
 
 namespace Holy {
-    std::optional<MineChance> john(GameData& game) {
+    std::pair<bool, std::optional<MineChance>> john(GameData& game) {
         std::vector<GameData> ans;
         Frontier front;
         find_front(game, front);
@@ -126,7 +126,7 @@ namespace Holy {
                     mc[p.hash()]++;
             }
         }
-        bool det = false;
+        bool det = false, guess = false;
         // Check for deterministic behaviours
         for (const auto& p : front) {
             const int chance = mc[p.hash()];
@@ -136,10 +136,12 @@ namespace Holy {
             } else if (chance == 0) {
                 game.mark_semiknown(p);
                 det = true;
-            }
+            } else if (chance * 3 / 2 >= ans.size())
+                // FIXME: 2 / 3 is an arbitary value, needs experiment.
+                guess = true;
         }
         if (det)
-            return std::nullopt;
-        return mc;
+            return { false, std::nullopt };
+        return { guess, mc };
     }
 } // namespace Holy

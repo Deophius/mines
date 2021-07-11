@@ -86,7 +86,7 @@ void main_loop(Butterfly& butt) {
         return;
     std::cout << "Invoking john" << std::endl;
     start = high_resolution_clock::now();
-    auto mc = john(game);
+    auto [guess, mc] = john(game);
     if (!mc)
         // Deterministic
         accio(game, butt, true);
@@ -95,7 +95,8 @@ void main_loop(Butterfly& butt) {
     std::cout << "Time consumed: ";
     std::cout << duration_cast<microseconds>(end - start).count() << "us"
               << std::endl;
-    std::cout << "Whether butterfly says we win: " << butt.verify() << std::endl;
+    std::cout << "Whether butterfly says we win: " << butt.verify() << '\n';
+    std::cout << "Whether john says we guess: " << guess << std::endl;
     if (mc && !butt.verify()) {
         print(*mc);
     } else if (!mc) {

@@ -64,12 +64,13 @@ namespace Holy {
     /// This should be the last struggle made against a difficult game,
     /// then resort to tactical guessing.
     /// @param game -- the game data
-    /// @returns nullopt if found a deterministic move
-    /// @return A map of Point -> int, showing how many cases in which a certain
-    /// point contains a mine
+    /// @returns (false, nullopt) if found a deterministic move
+    /// @return Second: A map of Point -> int, showing how many cases in which
+    /// a certain point contains a mine
+    /// @return First: true if john advises to guess, false if not
     /// @exception This function only transmits exceptions.
     /// @warning Might call terminate
-    std::optional<MineChance> john(GameData& game);
+    std::pair<bool, std::optional<MineChance>> john(GameData& game);
 } // namespace Holy
 
 #endif

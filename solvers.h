@@ -57,8 +57,7 @@ namespace Holy {
     bool accio(GameData& game, Butterfly& butt, bool det);
 
     /// @brief The type used to denote probability map
-    /// @warning It's total abuse if long long cannot hold the info
-    using MineChance = std::array<long long, hash_max>;
+    using MineChance = std::array<int, hash_max>;
 
     /// @brief Violently BFS and makes move depending on that, deterministic
     ///

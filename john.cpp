@@ -108,6 +108,7 @@ namespace Holy {
         assert(ans.size());
         // The result of this call
         MineChance mc;
+        mc.fill(0); // to be safe
         for (const auto& solution : ans) {
             for (const auto& p : front) {
                 if (solution[p].status == Block::mine)

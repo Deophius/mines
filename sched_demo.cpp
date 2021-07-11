@@ -2,8 +2,8 @@
 // Demonstrates how the program runs, and tests accio
 #include "solvers.h"
 #include <chrono>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 
 using namespace Holy;
 
@@ -36,7 +36,7 @@ void print(const GameData& game) {
 void print(const MineChance& mc) {
     for (int iy = 1; iy <= row; iy++) {
         for (int ix = 1; ix <= col; ix++) {
-            int hash = Point{ix, iy}.hash();
+            int hash = Point{ ix, iy }.hash();
             if (mc[hash])
                 std::cout << std::setw(2) << mc[hash] << ' ';
             else

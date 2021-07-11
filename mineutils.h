@@ -2,11 +2,12 @@
 #define MINEUTILS_H
 
 #include <array>
+#include <bitset>
 #include <stdexcept>
 
 namespace Holy {
     // parameters of minesweeper game
-    constexpr int col = 30, row = 16, mines = 99;
+    constexpr int col = 30, row = 16, mines = 99, hash_max = 512;
 
     // structure of a point (simple aggregate)
     struct Point {
@@ -85,6 +86,9 @@ namespace Holy {
     inline bool operator != (const Point& lhs, const Point& rhs) noexcept {
         return compare(lhs, rhs) != 0;
     }
+
+    // The bitset used as a checklist
+    using Checklist = std::bitset<hash_max>;
 
     // Data structure of a block
     // This struct stores the basic data of a block

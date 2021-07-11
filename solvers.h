@@ -58,7 +58,7 @@ namespace Holy {
 
     /// @brief The type used to denote probability map
     /// @warning It's total abuse if long long cannot hold the info
-    using MineChance = std::array<long long, col * row + 5>;
+    using MineChance = std::array<long long, hash_max>;
 
     /// @brief Violently BFS and makes move depending on that, deterministic
     ///

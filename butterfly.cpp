@@ -64,7 +64,7 @@ namespace Holy {
         // This is the BFS manner of doing things.
         std::queue<Point> q;
         // vis to eliminate double-checks
-        std::bitset<col* row + 2> vis = 0;
+        Checklist vis = 0;
         q.push(p);
         vis[p.hash()] = true;
         while (!q.empty()) {

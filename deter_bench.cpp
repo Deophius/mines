@@ -80,7 +80,7 @@ int main() {
     Butterfly butt;
     while (true) {
         main_loop(butt);
-        if (won + lost > 100'000) {
+        if (won + lost > 100) {
             write_data(file);
             reset_global();
         }

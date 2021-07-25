@@ -1,6 +1,6 @@
 #include "solvers.h"
-#include <fstream>
 #include <chrono>
+#include <fstream>
 
 using namespace Holy;
 
@@ -16,15 +16,16 @@ long long trivial_total;
 // Total time on john, in us
 long long john_total;
 
-
 void main_loop(Butterfly& butt) {
     GameData game;
     butt.start_game({ 10, 10 });
     game.mark_semiknown({ 10, 10 });
     accio(game, butt, true);
     bool has_hope;
+    bool first = true;
     int roundup_cnt = 0, felix_cnt = 0;
     using namespace std::chrono;
+trivial_start:
     auto start = high_resolution_clock::now();
     do {
         has_hope = false;
@@ -41,16 +42,22 @@ void main_loop(Butterfly& butt) {
     trivial_total += duration_cast<microseconds>(end - start).count();
     if (butt.verify()) {
         won++;
-        john_uninvoked++;
+        if (first)
+            john_uninvoked++;
         return;
     }
-    john_invoked++;
+    if (first)
+        john_invoked++;
     start = high_resolution_clock::now();
     auto [guess, mc] = john(game);
     if (!mc) {
         // Deterministic
         accio(game, butt, true);
         john_det++;
+        end = high_resolution_clock::now();
+        john_total += duration_cast<microseconds>(end - start).count();
+        first = false;
+        goto trivial_start;
     }
     end = high_resolution_clock::now();
     john_total += duration_cast<microseconds>(end - start).count();
@@ -68,7 +75,8 @@ void reset_global() {
 
 void write_data(std::ostream& file) {
     file << "Won: " << won << "    lost: " << lost << '\n';
-    file << "John invoked: " << john_invoked << "    not: " << john_uninvoked << '\n';
+    file << "John invoked: " << john_invoked << "    not: " << john_uninvoked
+         << '\n';
     file << "John determined: " << john_det << '\n';
     file << "Total time on john: " << john_total << "us\n";
     file << "Total time on trivial: " << trivial_total << "us\n\n";

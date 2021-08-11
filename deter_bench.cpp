@@ -1,6 +1,7 @@
 #include "solvers.h"
 #include <chrono>
 #include <fstream>
+#include <iostream>
 
 using namespace Holy;
 
@@ -86,11 +87,16 @@ void write_data(std::ostream& file) {
 int main() {
     std::ofstream file("deter_bench.log", std::ios::out | std::ios::app);
     Butterfly butt;
+    int exit = 0;
+    std::cout << "Exit after 100 games? (1 or 0)\n";
+    std::cin >> exit;
     while (true) {
         main_loop(butt);
         if (won + lost > 100) {
             write_data(file);
             reset_global();
+            if (exit)
+                break;
         }
     }
 }

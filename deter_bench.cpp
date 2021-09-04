@@ -11,10 +11,10 @@ int john_invoked, john_uninvoked, john_det;
 // Win rates
 int won, lost;
 
-// Total time spent on roundup and felix, in us
+// Total time spent on roundup and felix, in ms
 long long trivial_total;
 
-// Total time on john, in us
+// Total time on john, in ms
 long long john_total;
 
 void main_loop(Butterfly& butt) {
@@ -40,7 +40,7 @@ trivial_start:
         }
     } while (has_hope);
     auto end = high_resolution_clock::now();
-    trivial_total += duration_cast<microseconds>(end - start).count();
+    trivial_total += duration_cast<milliseconds>(end - start).count();
     if (butt.verify()) {
         won++;
         if (first)
@@ -56,12 +56,12 @@ trivial_start:
         accio(game, butt, true);
         john_det++;
         end = high_resolution_clock::now();
-        john_total += duration_cast<microseconds>(end - start).count();
+        john_total += duration_cast<milliseconds>(end - start).count();
         first = false;
         goto trivial_start;
     }
     end = high_resolution_clock::now();
-    john_total += duration_cast<microseconds>(end - start).count();
+    john_total += duration_cast<milliseconds>(end - start).count();
     if (butt.verify())
         won++;
     else
@@ -79,8 +79,8 @@ void write_data(std::ostream& file) {
     file << "John invoked: " << john_invoked << "    not: " << john_uninvoked
          << '\n';
     file << "John determined: " << john_det << '\n';
-    file << "Total time on john: " << john_total << "us\n";
-    file << "Total time on trivial: " << trivial_total << "us\n\n";
+    file << "Total time on john: " << john_total << "ms\n";
+    file << "Total time on trivial: " << trivial_total << "ms\n\n";
     file.flush();
 }
 

@@ -61,16 +61,14 @@ namespace {
     // We're at the kth element of frontier.
     // If we find a reasonable solution, append it to ans.
     // FIXME: Pay attention to move semantics after first dev
-    // We can freely move from game because it is a copy itself
-    // uses copy-move idiom here
     void
-        dfs(GameData game,
+        dfs(GameData& game,
             const Frontier& front,
             int k,
             std::vector<GameData>& ans) {
         if (k == front.size()) {
             // Reached end of recursion, success
-            ans.push_back(std::move(game));
+            ans.push_back(game);
             if (ans.size() >= 100000)
                 throw StopIteration();
             return;
@@ -79,31 +77,20 @@ namespace {
         // First check if this is set in previous guesses
         if (game[p].status != Block::unknown) {
             // move on
-            dfs(std::move(game), front, k + 1, ans);
+            dfs(game, front, k + 1, ans);
             return;
         }
         // First guess: mine
-        {
-            // copy it down because I'm having trouble restoring it,
-            GameData game2 = game;
-            game2.mark_mine(p);
-            do {
-                while (roundup(game2))
-                    ;
-            } while (felix(game2));
-            if (local_ok(game2, p))
-                dfs(std::move(game2), front, k + 1, ans);
+        if (game.mark_mine_check(p)) {
+            // If enters here, this is a good guess and will be reverted later
+            // If not, revertion already done in check
+            dfs(game, front, k + 1, ans);
+            game.unmark_mine(p);
         }
         // Second guess: not a mine
-        {
-            // Directly manipulate game here.
-            game.mark_semiknown(p);
-            do {
-                while (roundup(game))
-                    ;
-            } while (felix(game));
-            if (local_ok(game, p))
-                dfs(std::move(game), front, k + 1, ans);
+        if (game.mark_semiknown_check(p)) {
+            dfs(game, front, k + 1, ans);
+            game.unmark_semiknown(p);
         }
     }
 } // namespace

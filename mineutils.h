@@ -149,6 +149,16 @@ namespace Holy {
         // otherwise raises std::runtime_error
         void mark_mine(Point p);
 
+        // Marks a block as semiknown and checks that it doesn't violate rules
+        // If this action doesn't violate any rules, takes the actions like
+        // mark_semiknown() and returns true
+        // If there is a rule violation, *this remains unchanged, returns false
+        bool mark_semiknown_check(Point p);
+
+        // Marks a block as mine and check for rule violation
+        // Exception safety as described in mark_semiknown_check()
+        bool mark_mine_check(Point p);
+
         // Does the reverse of mark_semiknown
         void unmark_semiknown(Point p);
 

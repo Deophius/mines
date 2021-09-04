@@ -57,6 +57,42 @@ namespace Holy {
         });
     }
 
+    bool GameData::mark_semiknown_check(Point p) {
+        if (!p.valid())
+            throw std::runtime_error("p is not valid!");
+        if ((*this)[p].status != Block::unknown)
+            throw std::runtime_error(
+                "mark_semiknown_check: p does not refer to an unprobed block!");
+        // Grab a list of the blocks to be touched (max size = 8)
+        // starts from 1
+        Point nps[10] = {};
+        // how many entries are there in nps
+        int cnt = 0;
+        p.for_each_nei8([&](Point np) {
+            if ((*this)[np].second_init)
+                nps[++cnt] = np;
+        });
+        (*this)[p].status = Block::semiknown;
+        // The current neighbor under manipulation
+        int curr = 1;
+        for (; curr <= cnt; curr++) {
+            Block& nei = (*this)[nps[curr]];
+            nei.vacant_nei--;
+            if (nei.vacant_nei < nei.elabel)
+                break;
+        }
+        if (curr == cnt + 1)
+            // All right, loop exited normally
+            return true;
+        else {
+            // Revert the changes we made
+            for (; curr >= 1; curr--)
+                (*this)[nps[curr]].vacant_nei++;
+            (*this)[p].status = Block::unknown;
+            return false;
+        }
+    }
+
     void GameData::mark_mine(Point p) {
         if (!p.valid())
             throw std::runtime_error("p is not valid!");
@@ -73,6 +109,46 @@ namespace Holy {
         });
         // Decrease the number of mines left
         mines_left--;
+    }
+
+    bool GameData::mark_mine_check(Point p) {
+        if (!p.valid())
+            throw std::runtime_error("p is not valid!");
+        if ((*this)[p].status != Block::unknown)
+            throw std::runtime_error(
+                "mark_mine_check: p does not refer to an unprobed block!");
+        // Grab the list of neighbors that have had second init
+        Point nps[10] = {};
+        int cnt = 0;
+        p.for_each_nei8([&](Point np) {
+            if ((*this)[np].second_init)
+                nps[++cnt] = np;
+        });
+        // make the mark
+        (*this)[p].status = Block::mine;
+        // Start modifying second_init data
+        int curr = 1;
+        for (; curr <= cnt; curr++) {
+            Block& nei = (*this)[nps[curr]];
+            nei.elabel--;
+            nei.vacant_nei--;
+            // elabel <= vacant_nei because they both decreased
+            if (nei.elabel < 0)
+                break;
+        }
+        if (curr == cnt + 1) {
+            // No problem occurred
+            return true;
+        } else {
+            // Revert
+            for (; curr >= 1; curr--) {
+                Block& nei = (*this)[nps[curr]];
+                nei.elabel++;
+                nei.vacant_nei++;
+            }
+            (*this)[p].status = Block::unknown;
+            return false;
+        }
     }
 
     void GameData::unmark_mine(Point p) {

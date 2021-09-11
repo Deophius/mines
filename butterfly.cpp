@@ -7,7 +7,8 @@
 
 namespace Holy {
     Butterfly::Butterfly() :
-        mGen(std::chrono::system_clock::now().time_since_epoch().count()) {
+        // mGen(std::chrono::system_clock::now().time_since_epoch().count()) {
+        mGen(0) {
         // The other things are all done in start_game
     }
 

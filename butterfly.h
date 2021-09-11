@@ -4,11 +4,32 @@
 #include "mineutils.h"
 #include <bitset>
 #include <optional>
+#include <random>
 
 namespace Holy {
     // This class serves as a mock-minesweeper program
     class Butterfly {
     public:
+        // Initializes Butterfly, especially the gen engine
+        Butterfly();
+
+        // Copy operations are not permitted.
+        Butterfly& operator=(const Butterfly& src) = delete;
+
+        // Copy operations are not permitted.
+        Butterfly(const Butterfly& src) = delete;
+
+        // Move operations, default
+        // @exception None
+        Butterfly& operator=(Butterfly&& src) noexcept = default;
+
+        // Move operations, default
+        // @exception None
+        Butterfly(Butterfly&& src) noexcept = default;
+
+        // Default virtual destructor
+        virtual ~Butterfly() noexcept = default;
+
         // starts a game with click at p(x, y)
         // Plot mines so that (x-1, y-1) to (x+1, y+1) are cleared
         // Will spend some time plotting the game
@@ -61,6 +82,9 @@ namespace Holy {
         // invariant: inits in start_game in accordance with mMined
         // unchanged in a game
         std::array<std::array<int, row + 1>, col + 1> mLabel;
+
+        // The random generator to be used
+        std::mt19937 mGen;
     };
 } // namespace Holy
 

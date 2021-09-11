@@ -6,6 +6,11 @@
 #include <vector>
 
 namespace Holy {
+    Butterfly::Butterfly() :
+        mGen(std::chrono::system_clock::now().time_since_epoch().count()) {
+        // The other things are all done in start_game
+    }
+
     void Butterfly::start_game(Point p) {
         mInGame = true;
         for (auto& row : mMined)
@@ -27,8 +32,7 @@ namespace Holy {
             }
         }
         using std::chrono::system_clock;
-        std::mt19937 gen(system_clock::now().time_since_epoch().count());
-        std::shuffle(std::begin(possible), std::end(possible), gen);
+        std::shuffle(std::begin(possible), std::end(possible), mGen);
         for (int i = 1; i <= mines; i++) {
             Point& p = possible[i];
             mMined[p.x][p.y] = true;

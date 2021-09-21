@@ -57,51 +57,35 @@ void main_loop(Butterfly& butt) {
     std::cout << "Intial position:\n";
     print(game);
     bool has_hope;
-    int roundup_cnt = 0, felix_cnt = 0;
-    using namespace std::chrono;
-    auto start = high_resolution_clock::now();
     do {
         // std::cerr << "Has hope\n";
         has_hope = false;
-        while (++roundup_cnt && roundup(game)) {
+        while (roundup(game)) {
             has_hope = true;
             accio(game, butt, true);
         }
-        while (++felix_cnt && felix(game)) {
+        while (felix(game)) {
             has_hope = true;
             accio(game, butt, true);
         }
     } while (has_hope);
-    auto end = high_resolution_clock::now();
-    std::cout << "\nResult:\n";
-    print(game);
-    std::cout << "Felix-cnt = " << felix_cnt
-              << "   roundup cnt = " << roundup_cnt
-              << "   mines left = " << game.mines_left;
-    std::cout << "\nTime consumed: ";
-    std::cout << duration_cast<microseconds>(end - start).count() << "us"
-              << std::endl;
     std::cout << "Whether butterfly says we win: " << butt.verify() << std::endl;
     if (butt.verify())
         return;
     std::cout << "Invoking john" << std::endl;
-    start = high_resolution_clock::now();
-    auto [guess, mc] = john(game);
-    if (!mc)
-        // Deterministic
+    while (true) {
+        auto [guess, mc] = john(game);
+        if (mc) {
+            // No longer deterministic, break
+            std::cout << "Whether john was deterministic: " << (!mc) << '\n';
+            std::cout << "Whether butterfly says we win: " << butt.verify() << '\n';
+            std::cout << "Whether john says we guess: " << guess << std::endl;
+            break;
+        }
+        roundup(game);
         accio(game, butt, true);
-    end = high_resolution_clock::now();
-    std::cout << "Whether john was deterministic: " << (!mc) << '\n';
-    std::cout << "Time consumed: ";
-    std::cout << duration_cast<microseconds>(end - start).count() << "us"
-              << std::endl;
-    std::cout << "Whether butterfly says we win: " << butt.verify() << '\n';
-    std::cout << "Whether john says we guess: " << guess << std::endl;
-    if (mc && !butt.verify()) {
-        print(*mc);
-    } else if (!mc) {
-        print(game);
     }
+    print(game);
 }
 
 int main() {

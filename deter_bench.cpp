@@ -91,8 +91,14 @@ int main() {
     std::cout << "Exit after 100 games? (1 or 0)\n";
     std::cin >> exit;
     while (true) {
+        const int won_before = won;
         main_loop(butt);
-        if (won + lost > 100) {
+        if (won == won_before + 1)
+            file << "w";
+        else
+            file << "l";
+        if (won + lost == 100) {
+            file << '\n';
             write_data(file);
             reset_global();
             if (exit)

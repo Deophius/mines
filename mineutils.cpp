@@ -117,6 +117,9 @@ namespace Holy {
         if ((*this)[p].status != Block::unknown)
             throw std::runtime_error(
                 "mark_mine_check: p does not refer to an unprobed block!");
+        // If there are no more mines left, must be wrong
+        if (mines_left <= 0)
+            return false;
         // Grab the list of neighbors that have had second init
         Point nps[10] = {};
         int cnt = 0;
@@ -138,6 +141,7 @@ namespace Holy {
         }
         if (curr == cnt + 1) {
             // No problem occurred
+            mines_left--;
             return true;
         } else {
             // Revert

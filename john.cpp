@@ -60,7 +60,8 @@ namespace {
     // redoing if we guessed wrong
     // We're at the kth element of frontier.
     // If we find a reasonable solution, append it to ans.
-    // FIXME: Pay attention to move semantics after first dev
+    // Doesn't use Checklist to store answer because constructing Checklist
+    // takes too much time. See commit msg for details.
     void
         dfs(GameData& game,
             const Frontier& front,
